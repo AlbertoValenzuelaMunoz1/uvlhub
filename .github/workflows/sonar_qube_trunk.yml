@@ -20,10 +20,10 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mariadb-admin ping -u root -p uvlhub_root_password"
+          --health-cmd="mariadb-admin ping -u root -puvlhub_root_password || exit 1"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     env:
       MARIADB_ROOT_PASSWORD: uvlhub_root_password
