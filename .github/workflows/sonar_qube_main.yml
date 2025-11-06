@@ -35,6 +35,7 @@ jobs:
       MARIADB_HOSTNAME: 127.0.0.1
       MARIADB_PORT: 3306
       FLASK_ENV: testing
+      IS_CI: true
 
     steps:
       - name: Checkout repository
