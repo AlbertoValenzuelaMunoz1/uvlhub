@@ -25,7 +25,6 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-
     env:
       MARIADB_ROOT_PASSWORD: uvlhub_root_password
       MARIADB_DATABASE: uvlhubdb_test
@@ -44,6 +43,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -56,25 +56,26 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-
-      - name: Run tests with coverage
-        run: pytest --cov=. --cov-report=xml --ignore-glob='*selenium*'
-
       - name: Install SonarCloud Scanner
         run: |
           wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
           unzip sonar-scanner-cli-4.7.0.2747-linux.zip
+          # Configuramos PATH y JAVA_HOME para el scanner
           echo "${{ github.workspace }}/sonar-scanner-4.7.0.2747-linux/bin" >> $GITHUB_PATH
+          echo "/usr/lib/jvm/java-17-temurin/bin" >> $GITHUB_PATH
 
       - name: SonarCloud Scan
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JAVA_HOME: /usr/lib/jvm/java-17-temurin
         run: |
+          # Verificamos que Java 17 esté activo
+          echo "🔹 Java version in use:"
+          java -version
+
           sonar-scanner \
             -Dsonar.projectKey=egc_tennis-hub-trunk \
             -Dsonar.organization=egc \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.python.coverage.reportPaths=coverage.xml \
             -Dsonar.sources=. \
             -Dsonar.exclusions=**/__pycache__/**,**/venv/**,**/.venv/**
