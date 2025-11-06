@@ -35,7 +35,6 @@ jobs:
       MARIADB_HOSTNAME: 127.0.0.1
       MARIADB_PORT: 3306
       FLASK_ENV: testing
-      IS_CI: true
 
     steps:
       - name: Checkout repository
@@ -45,6 +44,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Set up Java 17 
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
 
       - name: Install dependencies
         run: |
