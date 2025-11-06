@@ -34,7 +34,6 @@ def initialize_driver():
     working_dir = os.environ.get("WORKING_DIR", "")
     selenium_hub_url = "http://selenium-hub:4444/wd/hub"
     driver_name = get_service_driver()
-    is_ci = os.getenv("IS_CI") == "true"
 
     # --- Firefox Snap fix ---
     if driver_name == "firefox":
@@ -51,10 +50,7 @@ def initialize_driver():
         else:
             raise Exception(f"Driver '{driver_name}' not supported.")
 
-        if is_ci:
-            options.add_argument("--headless")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
+    
 
         driver = webdriver.Remote(command_executor=selenium_hub_url, options=options)
         return driver
@@ -62,21 +58,11 @@ def initialize_driver():
     # --- Local mode ---
     if driver_name == "chrome":
         options = webdriver.ChromeOptions()
-        if is_ci:
-            options.add_argument("--headless")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-
         service = ChromeService(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
 
     elif driver_name == "firefox":
         options = webdriver.FirefoxOptions()
-        if is_ci:
-            options.add_argument("--headless")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-
         service = FirefoxService(GeckoDriverManager().install())
         driver = webdriver.Firefox(service=service, options=options)
 
