@@ -1,4 +1,4 @@
-name: SonarCloud Analysis trunk
+name: SonarCloud Analysis main
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  sonarcloud:
     runs-on: ubuntu-latest
 
     services:
@@ -44,38 +44,28 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-      - name: Install SonarCloud Scanner
-        run: |
-          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
-          unzip sonar-scanner-cli-4.7.0.2747-linux.zip
-          # Configuramos PATH y JAVA_HOME para el scanner
-          echo "${{ github.workspace }}/sonar-scanner-4.7.0.2747-linux/bin" >> $GITHUB_PATH
-          echo "/usr/lib/jvm/java-17-temurin/bin" >> $GITHUB_PATH
+      - name: Run tests
+        run: pytest --cov=. --cov-report=xml --ignore-glob='*selenium*'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
 
       - name: SonarCloud Scan
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-17-temurin
-        run: |
-          # Verificamos que Java 17 esté activo
-          echo "🔹 Java version in use:"
-          java -version
-
-          sonar-scanner \
-            -Dsonar.projectKey=egc_tennis-hub \
-            -Dsonar.organization=egc \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.sources=. \
-            -Dsonar.exclusions=**/__pycache__/**,**/venv/**,**/.venv/**
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          args: >
+            -Dsonar.organization=egc
+            -Dsonar.projectKey=egc_tennis-hub
+            -Dsonar.projectName=tennis-hub
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.branch.name=master
+            -Dsonar.python.coverage.reportPaths=coverage.xml
