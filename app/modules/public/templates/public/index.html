@@ -282,5 +282,6 @@
 {% endblock %}
 
 {% block scripts %}
+    {{ super() }}
     <script src="{{ url_for('public.scripts') }}"></script>
 {% endblock %}

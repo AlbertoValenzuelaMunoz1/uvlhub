@@ -33,6 +33,9 @@ chico sundermann">
 
     <link rel="stylesheet" href="{{ url_for("static", filename="css/own.css") }}">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
 </head>
 
 <body>
@@ -163,6 +166,27 @@ chico sundermann">
                 <ul class="navbar-nav navbar-align">
                     <li class="nav-item dropdown">
 
+                            <button
+                                class="btn btn-warning dropdown-toggle"
+                                id="carritoDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                id="cartDropdown"
+                            >
+                                🛒 Carrito (0)
+                            </button>
+
+                            <div
+                                id="cart_files"
+                                class="dropdown-menu p-3"
+                                style="min-width: 300px;"
+                                data-bs-auto-close="outside"
+                            >
+                                <!-- Productos aquí -->
+
+                                <p class="text-center">El carrito está vacío.</p>
+                            </div>
+                        
                         {% if current_user.is_anonymous %}
                             <a class="nav-link  d-none d-sm-inline-block" href="{{ url_for('auth.login') }}">Login</a>
                             <a class="nav-link  d-none d-sm-inline-block" href="{{ url_for('auth.show_signup_form') }}">Sign
@@ -283,7 +307,8 @@ Keywords: Feature models; Software product line; Variability; Dataset; Uvl
 Romero-Organvidez, D., Galindo, J. A., Sundermann, C., Horcas, J.-M., & Benavides, D. (2024). UVLHub: A feature model data repository using UVL and open science principles. Journal of Systems and Software, 2024, 112150. https://doi.org/10.1016/j.jss.2024.112150
 </pre>
 
-<script src="{{ url_for("static", filename="js/app.js") }}"></script>
+
+
 
 <script>
 
@@ -301,8 +326,11 @@ Romero-Organvidez, D., Galindo, J. A., Sundermann, C., Horcas, J.-M., & Benavide
 
 </script>
 
-{% block scripts %}{% endblock %}
+{% block scripts %}
+   
+    <script src="{{ url_for('dataset.static', filename='scripts.js') }}"></script>
+
+{% endblock %}
 
 </body>
-
 </html>

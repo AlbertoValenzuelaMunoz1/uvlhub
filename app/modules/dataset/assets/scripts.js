@@ -1,3 +1,6 @@
+
+console.log("✅ scripts.js cargado correctamente desde base_template");
+
 var currentId = 0;
         var amount_authors = 0;
 
@@ -81,6 +84,11 @@ var currentId = 0;
             return (titleLength >= 3 && descriptionLength >= 3);
         }
 
+        docuemt.getElementById('add_to_cart_{{ file.id }}').addEventListener('click', function () {
+            let cart_files =  document.getElementById('cart_files');  
+
+        });
+
 
         document.getElementById('add_author').addEventListener('click', function () {
             let authors = document.getElementById('authors');
@@ -127,6 +135,8 @@ var currentId = 0;
             upload_error.appendChild(alert);
             upload_error.style.display = 'block';
         }
+
+
 
         window.onload = function () {
 
@@ -236,4 +246,88 @@ var currentId = 0;
         function isValidOrcid(orcid) {
             let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
             return orcidRegex.test(orcid);
+        }
+
+        // --------------------
+        // 🛒 SECCIÓN: CARRITO DE FILES (FRONTEND)
+        // --------------------
+        let cart = [];
+
+        // Al cargar la página, inicializamos el carrito
+        window.addEventListener('load', () => {
+        const saved = localStorage.getItem('cart');
+        if (saved) cart = JSON.parse(saved);
+
+        updateCartUI();
+
+        // Detectar todos los botones "Add Cart" y asignarles eventos
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', () => addToCart(button.dataset));
+        });
+        });
+
+        // Añadir un file al carrito
+        function addToCart(data) {
+        const { id, name, size } = data;
+
+        if (cart.some(item => item.id === id)) {
+            alert("Este archivo ya está en el carrito.");
+            return;
+        }
+
+        cart.push({ id, name, size });
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartUI();
+        }
+
+        // Eliminar file del carrito
+        function removeFromCart(id) {
+        cart = cart.filter(item => item.id !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartUI();
+        }
+
+        // Vaciar todo el carrito
+        function clearCart() {
+        cart = [];
+        localStorage.removeItem('cart');
+        updateCartUI();
+        }
+
+        // Actualizar la vista del carrito (dropdown + contador)
+        function updateCartUI() {
+        const dropdown = document.getElementById('cart_files');
+        const counter = document.getElementById('cart_count');
+
+        if (!dropdown || !counter) return;
+
+        counter.textContent = cart.length;
+        dropdown.innerHTML = '';
+
+        if (cart.length === 0) {
+            dropdown.innerHTML = '<li class="text-center text-muted">Carrito vacío</li>';
+            return;
+        }
+
+        cart.forEach(item => {
+            dropdown.innerHTML += `
+            <li class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                <strong>${item.name}</strong><br>
+                <small class="text-muted">${item.size}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="removeFromCart('${item.id}')">
+                <i class="fa-solid fa-xmark"></i>
+                </button>
+            </li>
+            `;
+        });
+
+        dropdown.innerHTML += `
+            <li><hr class="dropdown-divider"></li>
+            <li class="text-center">
+            <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">Vaciar carrito</button>
+            </li>
+        `;
         }
