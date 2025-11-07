@@ -19,6 +19,13 @@
 
                 <div id="results"></div>
 
+                <div class="col-12 text-center mt-3">
+                    <a href="/trending" class="btn btn-primary">
+                        <i data-feather="search" class="center-button-icon"></i>
+                        Trending Datasets
+                    </a>
+                </div>
+
                 <div class="col text-center" id="results_not_found">
                     <img src="{{ url_for('static', filename='img/items/not_found.svg') }}"
                          style="width: 50%; max-width: 100px; height: auto; margin-top: 30px"/>
@@ -34,6 +41,7 @@
 
             </div>
         </div>
+        
 
         <div class="col-lg-5 fixed-column" id="filters">
 

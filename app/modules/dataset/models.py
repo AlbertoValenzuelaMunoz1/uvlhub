@@ -129,6 +129,14 @@ class DataSet(db.Model):
 
     def __repr__(self):
         return f"DataSet<{self.id}>"
+    
+    def get_number_of_downloads(self) -> int:
+        from app.modules.dataset.services import DataSetService
+        return DataSetService().get_number_of_downloads(self)
+
+    def get_number_of_views(self) -> int:
+        from app.modules.dataset.services import DataSetService
+        return DataSetService().get_number_of_views(self)
 
 
 class DSDownloadRecord(db.Model):
