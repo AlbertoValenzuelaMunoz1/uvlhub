@@ -9,9 +9,7 @@ name: Pytest
 
 on:
   push:
-    branches:
-      - main
-      - trunk
+    branches: [main, trunk]
 
 jobs:
   pytest:
