@@ -11,11 +11,9 @@ def get_service_driver():
     """Return the configured browser driver (chrome or firefox)."""
     return os.environ.get("SERVICE_DRIVER", "firefox").lower()
 
-
 def set_service_driver(driver="firefox"):
     """Set the browser driver dynamically."""
     os.environ["SERVICE_DRIVER"] = driver.lower()
-
 
 def initialize_driver():
     """
@@ -24,13 +22,6 @@ def initialize_driver():
     - Otherwise: run locally using webdriver_manager.
     Keeps compatibility with Firefox Snap (TMPDIR fix).
     """
-    import os
-    from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service as ChromeService
-    from selenium.webdriver.firefox.service import Service as FirefoxService
-    from webdriver_manager.chrome import ChromeDriverManager
-    from webdriver_manager.firefox import GeckoDriverManager
-
     working_dir = os.environ.get("WORKING_DIR", "")
     selenium_hub_url = "http://selenium-hub:4444/wd/hub"
     driver_name = get_service_driver()
@@ -50,8 +41,6 @@ def initialize_driver():
         else:
             raise Exception(f"Driver '{driver_name}' not supported.")
 
-    
-
         driver = webdriver.Remote(command_executor=selenium_hub_url, options=options)
         return driver
 
@@ -70,8 +59,6 @@ def initialize_driver():
         raise Exception(f"Driver '{driver_name}' not supported.")
 
     return driver
-
-
 
 def close_driver(driver):
     """Safely quit the browser."""

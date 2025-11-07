@@ -51,7 +51,7 @@ jobs:
           pip install pytest pytest-cov
 
       - name: Run tests
-        run: pytest --cov=. --cov-report=xml --ignore-glob='*selenium*'
+        run: pytest --cov=app/modules --cov-report=xml --ignore-glob='*selenium*'
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
