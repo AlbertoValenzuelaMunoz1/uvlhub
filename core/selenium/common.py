@@ -11,9 +11,11 @@ def get_service_driver():
     """Return the configured browser driver (chrome or firefox)."""
     return os.environ.get("SERVICE_DRIVER", "firefox").lower()
 
+
 def set_service_driver(driver="firefox"):
     """Set the browser driver dynamically."""
     os.environ["SERVICE_DRIVER"] = driver.lower()
+
 
 def initialize_driver():
     """
@@ -59,6 +61,7 @@ def initialize_driver():
         raise Exception(f"Driver '{driver_name}' not supported.")
 
     return driver
+
 
 def close_driver(driver):
     """Safely quit the browser."""
