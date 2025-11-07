@@ -131,6 +131,26 @@ def test_upload_dataset():
         # Close the browser
         close_driver(driver)
 
+def test_testdownloadcounter():
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        driver.get(f"{host}")
+        driver.set_window_size(602, 743)
+        driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+        descargas = int(driver.find_element(By.ID, "downloads-badge").text.split(": ")[1])
+        driver.find_element(By.CSS_SELECTOR, ".mt-3").click()
+        driver.get(driver.current_url)
+        descargas2 = int(driver.find_element(By.ID, "downloads-badge").text.split(": ")[1])
+        assert descargas2 == descargas + 1
+    finally:
+
+        # Close the browser
+        close_driver(driver)
+
 
 # Call the test function
 test_upload_dataset()
+test_testdownloadcounter()
