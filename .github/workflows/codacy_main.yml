@@ -1,16 +1,17 @@
 name: Codacy CI
 
 on:
+
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:5.7
@@ -23,19 +24,32 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Check for outdated dependencies
+      run: |
+        pip list --outdated
+   
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Security audit with pip-audit
+      run: |
+        pip install pip-audit
+        pip-audit || true
 
     - name: Upload coverage to Codacy
       run: |
