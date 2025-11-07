@@ -166,6 +166,10 @@ class DSViewRecordService(BaseService):
     def __init__(self):
         super().__init__(DSViewRecordRepository())
 
+    def get_view_count(self, dataset) -> int:
+        dataset_id = dataset.id if hasattr(dataset, "id") else dataset
+        return self.repository.get_view_count(dataset_id)
+
     def the_record_exists(self, dataset: DataSet, user_cookie: str):
         return self.repository.the_record_exists(dataset, user_cookie)
 

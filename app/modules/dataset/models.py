@@ -70,6 +70,7 @@ class DataSet(db.Model):
 
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    download_count = db.Column(db.Integer, nullable=False, default=0)
 
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     feature_models = db.relationship("FeatureModel", backref="data_set", lazy=True, cascade="all, delete")
@@ -110,6 +111,7 @@ class DataSet(db.Model):
         return {
             "title": self.ds_meta_data.title,
             "id": self.id,
+            "download_count": self.download_count,
             "created_at": self.created_at,
             "created_at_timestamp": int(self.created_at.timestamp()),
             "description": self.ds_meta_data.description,

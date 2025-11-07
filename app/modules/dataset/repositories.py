@@ -37,6 +37,9 @@ class DSViewRecordRepository(BaseRepository):
     def __init__(self):
         super().__init__(DSViewRecord)
 
+    def get_view_count(self, dataset_id: int) -> int:
+        return self.model.query.filter_by(dataset_id=dataset_id).count()
+
     def total_dataset_views(self) -> int:
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0
