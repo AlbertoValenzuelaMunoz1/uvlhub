@@ -1,8 +1,46 @@
+import io
+import zipfile
+from app.modules.hubfile.models import Hubfile
 from bs4 import BeautifulSoup
-from app.modules.dataset.services import DSMetaDataService,CommentService,DataSetRepository,DataSetService
+from app.modules.dataset.services import DSMetaDataService,DataSetService
 from app.modules.dataset.models import DataSet
 from app.modules.auth.models import User
 import re
+
+
+
+def test_download_bulk_files_returns_zip(test_database_poblated):
+    files = Hubfile.query.limit(2).all()
+    assert len(files) == 2
+    file_ids = [file.id for file in files]
+
+    response = test_database_poblated.post(
+        "/file/download/bulk",
+        json={"file_ids": file_ids},
+    )
+
+    assert response.status_code == 200
+    assert response.headers.get("Content-Type", "").startswith(
+        "application/zip"
+    )
+
+    zip_file = zipfile.ZipFile(io.BytesIO(response.data))
+    zip_names = set(zip_file.namelist())
+
+    for file in files:
+        expected_path = f"dataset_{file.feature_model.data_set_id}/{file.name}"
+        assert expected_path in zip_names
+
+
+def test_download_bulk_files_requires_files(test_database_poblated):
+    response = test_database_poblated.post(
+        "/file/download/bulk",
+        json={"file_ids": []},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "No files selected"
+
 
 dataset_service=DataSetService()
 def test_create_comment(test_database_poblated):

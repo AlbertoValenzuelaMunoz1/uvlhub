@@ -112,5 +112,6 @@
 {% endblock %}
 
 {% block scripts %}
+    { { super() } }
     <script src="{{ url_for('auth.scripts') }}"></script>
 {% endblock %}

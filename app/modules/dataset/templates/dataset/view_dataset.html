@@ -293,6 +293,7 @@
                                     <button id="btnGroupDropExport{{ file.id }}" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style=" border-radius: 5px;">
                                         <i data-feather="download"></i> Export
                                     </button>
+
                                     <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport{{ file.id }}">
                                         <li>
                                             <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
@@ -314,6 +315,16 @@
                                         </li>
                                     </ul>
                                 </div>
+
+                                <button
+                                class="btn btn-outline-secondary btn-sm add-to-cart"
+                                style="border-radius: 5px;"
+                                data-id="{{ file.id }}"
+                                data-name="{{ file.name }}"
+                                data-size="{{ file.get_formatted_size() }}"
+                                >
+                                Add Cart
+                                </button>
                                 
                                 
 
