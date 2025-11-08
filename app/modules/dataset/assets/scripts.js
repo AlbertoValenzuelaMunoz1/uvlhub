@@ -84,17 +84,17 @@ var currentId = 0;
             return (titleLength >= 3 && descriptionLength >= 3);
         }
 
-        docuemt.getElementById('add_to_cart_{{ file.id }}').addEventListener('click', function () {
-            let cart_files =  document.getElementById('cart_files');  
-
-        });
-
-
-        document.getElementById('add_author').addEventListener('click', function () {
-            let authors = document.getElementById('authors');
-            let newAuthor = createAuthorBlock(amount_authors++, "");
-            authors.appendChild(newAuthor);
-        });
+        const addAuthorBtn = document.getElementById('add_author');
+        if (addAuthorBtn) {
+            addAuthorBtn.addEventListener('click', function () {
+                let authors = document.getElementById('authors');
+                if (!authors) {
+                    return;
+                }
+                let newAuthor = createAuthorBlock(amount_authors++, "");
+                authors.appendChild(newAuthor);
+            });
+        }
 
 
         document.addEventListener('click', function (event) {
@@ -103,6 +103,9 @@ var currentId = 0;
                 let authorsButtonId = event.target.id;
                 let authorsId = authorsButtonId.replace("_button", "");
                 let authors = document.getElementById(authorsId);
+                if (!authors) {
+                    return;
+                }
                 let id = authorsId.replace("_form_authors", "")
                 let newAuthor = createAuthorBlock(amount_authors, `feature_models-${id}-`);
                 authors.appendChild(newAuthor);
@@ -111,23 +114,41 @@ var currentId = 0;
         });
 
         function show_loading() {
-            document.getElementById("upload_button").style.display = "none";
-            document.getElementById("loading").style.display = "block";
+            const uploadButton = document.getElementById("upload_button");
+            const loading = document.getElementById("loading");
+            if (uploadButton) {
+                uploadButton.style.display = "none";
+            }
+            if (loading) {
+                loading.style.display = "block";
+            }
         }
 
         function hide_loading() {
-            document.getElementById("upload_button").style.display = "block";
-            document.getElementById("loading").style.display = "none";
+            const uploadButton = document.getElementById("upload_button");
+            const loading = document.getElementById("loading");
+            if (uploadButton) {
+                uploadButton.style.display = "block";
+            }
+            if (loading) {
+                loading.style.display = "none";
+            }
         }
 
         function clean_upload_errors() {
             let upload_error = document.getElementById("upload_error");
+            if (!upload_error) {
+                return;
+            }
             upload_error.innerHTML = "";
             upload_error.style.display = 'none';
         }
 
         function write_upload_error(error_message) {
             let upload_error = document.getElementById("upload_error");
+            if (!upload_error) {
+                return;
+            }
             let alert = document.createElement('p');
             alert.style.margin = '0';
             alert.style.padding = '0';
@@ -138,11 +159,18 @@ var currentId = 0;
 
 
 
-        window.onload = function () {
+        window.addEventListener('load', function () {
 
-            test_zenodo_connection();
+            if (typeof test_zenodo_connection === 'function') {
+                test_zenodo_connection();
+            }
 
-            document.getElementById('upload_button').addEventListener('click', function () {
+            const uploadButton = document.getElementById('upload_button');
+            if (!uploadButton) {
+                return;
+            }
+
+            uploadButton.addEventListener('click', function () {
 
                 clean_upload_errors();
                 show_loading();
@@ -168,7 +196,13 @@ var currentId = 0;
                     let formDataJson = JSON.stringify(formData);
                     console.log(formDataJson);
 
-                    const csrfToken = document.getElementById('csrf_token').value;
+                    const csrfField = document.getElementById('csrf_token');
+                    if (!csrfField) {
+                        hide_loading();
+                        write_upload_error("CSRF token missing");
+                        return;
+                    }
+                    const csrfToken = csrfField.value;
                     const formUploadData = new FormData();
                     formUploadData.append('csrf_token', csrfToken);
 
@@ -240,7 +274,7 @@ var currentId = 0;
 
 
             });
-        };
+        });
 
 
         function isValidOrcid(orcid) {
@@ -305,13 +339,13 @@ var currentId = 0;
         dropdown.innerHTML = '';
 
         if (cart.length === 0) {
-            dropdown.innerHTML = '<li class="text-center text-muted">Carrito vacío</li>';
+            dropdown.innerHTML = '<div class="text-center text-muted">El carrito está vacío.</div>';
             return;
         }
 
         cart.forEach(item => {
             dropdown.innerHTML += `
-            <li class="d-flex justify-content-between align-items-center mb-2">
+            <div class="dropdown-item d-flex justify-content-between align-items-start gap-2">
                 <div>
                 <strong>${item.name}</strong><br>
                 <small class="text-muted">${item.size}</small>
@@ -320,14 +354,54 @@ var currentId = 0;
                         onclick="removeFromCart('${item.id}')">
                 <i class="fa-solid fa-xmark"></i>
                 </button>
-            </li>
+            </div>
             `;
         });
 
         dropdown.innerHTML += `
-            <li><hr class="dropdown-divider"></li>
-            <li class="text-center">
-            <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">Vaciar carrito</button>
-            </li>
+            <div class="dropdown-divider"></div>
+            <div class="d-flex justify-content-between gap-2">
+            <button class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="clearCart()">Vaciar</button>
+            <button class="btn btn-sm btn-primary flex-grow-1" onclick="downloadCart()">Descargar todo</button>
+            </div>
         `;
+        }
+
+        async function downloadCart() {
+        if (cart.length === 0) {
+            alert("El carrito está vacío.");
+            return;
+        }
+
+        const fileIds = cart.map(item => parseInt(item.id, 10));
+
+        try {
+            const response = await fetch('/file/download/bulk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ file_ids: fileIds })
+            });
+
+            if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error || 'No se ha podido descargar el carrito.';
+            alert(errorMessage);
+            return;
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `uvlhub-cart-${Date.now()}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading cart:', error);
+            alert('Ocurrió un error al descargar los archivos del carrito.');
+        }
         }
