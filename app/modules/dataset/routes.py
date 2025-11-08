@@ -21,7 +21,7 @@ from flask_login import current_user, login_required
 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
-from app.modules.dataset.models import DSDownloadRecord
+from app.modules.dataset.models import DSDownloadRecord,Comment
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -29,9 +29,11 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
+    CommentService
 )
 from app.modules.zenodo.services import ZenodoService
-
+from app.modules.auth.services import AuthenticationService
+comment_service=CommentService()
 logger = logging.getLogger(__name__)
 
 
@@ -270,3 +272,21 @@ def get_unsynchronized_dataset(dataset_id):
         abort(404)
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
+@dataset_bp.route("/datasets/<int:dataset_id>/comments", methods=["POST"])
+@login_required  
+def add_comment(dataset_id):
+    content = request.form.get("content")
+    if not content or content.strip() == '':
+        abort(400, description="El contenido del comentario no puede estar vacío.")
+    parent_id = request.form.get("parent_id") or None
+    auth_service=AuthenticationService()
+    user=auth_service.get_authenticated_user()
+    dataset=dataset_service.get_or_404(dataset_id)
+    comment_service.create(
+        content=content,
+        dataset_id=dataset_id,
+        parent_id=parent_id,
+        user_id=user.id)
+    
+
+    return redirect(f'/doi/{dataset.ds_meta_data.dataset_doi}')

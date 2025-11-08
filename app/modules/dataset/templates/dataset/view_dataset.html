@@ -331,6 +331,62 @@
             Download all ({{ dataset.get_file_total_size_for_human() }})
         </a>
     </div>
+    <div class="comments-container">
+
+    <h3>Comments</h3>
+
+    {% macro render_comments(comments, level=0) %}
+        {% for comment in comments %}
+        <div class="comment" id="comment-{{comment.id}}" style="margin-left: {{ level * 20 }}px; border-left: {{ level > 0 and '2px solid #ccc' or 'none' }}; padding-left: 10px; margin-bottom: 10px;">
+            
+            <p>
+                <b>{{ comment.user.profile.name }}:</b> {{ comment.content }}
+                
+                {% if current_user.is_authenticated %}
+                <span style="margin-left: 10px; color: blue; cursor: pointer;" onclick="reply({{comment.id}}, '{{ comment.user.profile.name }}')">
+                    Reply
+                </span>
+                {% endif %}
+
+                {% if comment.children %}
+                <span id="toggle-{{ comment.id }}" style="margin-left: 10px; color: gray; cursor: pointer;" onclick="toggleChildren('children-{{ comment.id }}', 'toggle-{{ comment.id }}', {{ comment.children|length }})">
+                    [+] Show {{ comment.children|length }} replies
+                </span>
+                {% endif %}
+            </p>
+
+            {% if comment.children %}
+            <div id="children-{{ comment.id }}" style="display:none;">
+                {{ render_comments(comment.children, level + 1) }}
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    {% endmacro %}
+
+    {# Filtrar solo comentarios raíz #}
+    {% set root_comments = dataset.comments | selectattr("parent_id", "equalto", None) | list %}
+    {{ render_comments(root_comments) }}
+    
+</div>
+
+{% if current_user.is_authenticated %}
+<div id="replyInfo" style="display:none; margin-bottom:10px; font-style:italic;">
+    Replying to <span id="replyName"></span> 
+    <button type="button" onclick="cancelReply()" style="margin-left:10px;">Cancel</button>
+</div>
+
+<form id="addCommentForm" method="POST" action="/datasets/{{dataset.id}}/comments" class="mb-3">
+    <div class="mb-2">
+        <textarea class="form-control" name="content" placeholder="Write a comment..." required></textarea>
+    </div>
+    <input type="hidden" name="parent_id" id="parent_id" value="">
+    <button type="submit" class="btn btn-primary btn-sm">Add Comment</button>
+</form>
+{% else %}
+<p>Log in to add comment</p>
+{% endif %}
     
 </div>
 
@@ -492,6 +548,33 @@
             console.error('Failed to copy text: ', err);
         });
     }
+    function reply(commentId, username){
+    const inputParent = document.getElementById("parent_id");
+    inputParent.value = commentId.toString();
+
+    const replyInfo = document.getElementById("replyInfo");
+    const replyName = document.getElementById("replyName");
+    replyName.textContent = username;
+    replyInfo.style.display = "block";
+}
+
+function cancelReply(){
+    const inputParent = document.getElementById("parent_id");
+    inputParent.value = "";
+
+    const replyInfo = document.getElementById("replyInfo");
+    replyInfo.style.display = "none";
+}
+
+// Mostrar/ocultar comentarios hijos
+function toggleChildren(id){
+    const div = document.getElementById(id);
+    if(div.style.display === "none"){
+        div.style.display = "block";
+    } else {
+        div.style.display = "none";
+    }
+}
 </script>
 
 {% endblock %}

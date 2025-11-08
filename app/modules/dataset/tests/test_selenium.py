@@ -4,6 +4,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -131,6 +132,63 @@ def test_upload_dataset():
         # Close the browser
         close_driver(driver)
 
+    
+
+        # Close the browser
+        
+
+def test_comentarios():
+    driver = initialize_driver()
+    host = get_host_for_selenium_testing()
+
+
+    driver.get(host + "/")
+
+    # Ir al dataset de prueba
+    driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+
+    # Iniciar sesión
+    driver.find_element(By.CSS_SELECTOR, ".nav-link:nth-child(1)").click()
+    driver.find_element(By.ID, "email").send_keys("user1@example.com")
+    driver.find_element(By.ID, "password").send_keys("1234")
+    driver.find_element(By.ID, "submit").click()
+
+    # Volver al dataset
+    driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+
+    # Crear primer comentario
+    driver.find_element(By.NAME, "content").send_keys("Hola")
+    driver.find_element(By.CSS_SELECTOR, ".btn-primary:nth-child(3)").click()
+
+    # Esperar a que aparezca el comentario “Hola”
+    hola_comment = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//div[contains(@class, 'comment') and contains(., 'Hola')]")
+        )
+    )
+    assert hola_comment is not None, "No se encontró el comentario con texto 'Hola'"
+
+    # Click en “Reply” (buscar el span dentro del comentario que contenga “Reply”)
+    reply_button = hola_comment.find_element(By.XPATH, ".//span[contains(text(), 'Reply')]")
+    reply_button.click()
+
+    # Escribir la respuesta
+    driver.find_element(By.NAME, "content").send_keys("Adios")
+    driver.find_element(By.CSS_SELECTOR, ".btn-primary:nth-child(3)").click()
+
+    adios_comment = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((
+        By.XPATH,
+        "//div[contains(@id, 'children')]/div[contains(@class, 'comment') and contains(., 'Adios')]"
+    ))
+)
+
+    assert adios_comment is not None, "No se encontró el comentario con texto 'Adios'"
+    assert adios_comment.value_of_css_property("margin-left") =="20px"
+
+    driver.quit()
+
 
 # Call the test function
 test_upload_dataset()
+test_comentarios()
