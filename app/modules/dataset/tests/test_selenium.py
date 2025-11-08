@@ -178,10 +178,11 @@ def test_testcarritos():
             By.CSS_SELECTOR,
             ".list-group-item:nth-child(2) .add-to-cart",
         ).click()
-        assert (
-            driver.switch_to.alert.text
-            == "Este archivo ya está en el carrito."
-        )
+        alert = driver.switch_to.alert
+        assert alert.text == "Este archivo ya está en el carrito."
+
+        # Cerramos el alert para poder seguir interactuando con la página
+        alert.accept()
         driver.find_element(By.ID, "carritoDropdown").click()
         driver.find_element(
             By.CSS_SELECTOR,
@@ -192,10 +193,9 @@ def test_testcarritos():
             By.CSS_SELECTOR,
             ".list-group-item:nth-child(2) .add-to-cart",
         ).click()
-        assert (
-            driver.switch_to.alert.text
-            == "Este archivo ya está en el carrito."
-        )
+        alert = driver.switch_to.alert
+        assert alert.text == "Este archivo ya está en el carrito."
+        alert.accept()
         driver.find_element(
             By.CSS_SELECTOR,
             ".list-group-item:nth-child(3) .add-to-cart",
