@@ -81,7 +81,10 @@ def download_bulk_files():
 
     with ZipFile(zip_path, "w") as zipf:
         for file in files:
-            directory_path = f"uploads/user_{file.feature_model.data_set.user_id}/dataset_{file.feature_model.data_set_id}/"
+            directory_path = (
+                f"uploads/user_{file.feature_model.data_set.user_id}/"
+                f"dataset_{file.feature_model.data_set_id}/"
+            )
             absolute_path = os.path.join(parent_directory_path, directory_path, file.name)
             if not os.path.exists(absolute_path):
                 continue

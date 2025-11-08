@@ -11,7 +11,8 @@ from core.selenium.common import close_driver, initialize_driver
 
 def wait_for_page_to_load(driver, timeout=4):
     WebDriverWait(driver, timeout).until(
-        lambda driver: driver.execute_script("return document.readyState") == "complete"
+        lambda driver: driver.execute_script("return document.readyState")
+        == "complete"
     )
 
 
@@ -20,7 +21,9 @@ def count_datasets(driver, host):
     wait_for_page_to_load(driver)
 
     try:
-        amount_datasets = len(driver.find_elements(By.XPATH, "//table//tbody//tr"))
+        amount_datasets = len(
+            driver.find_elements(By.XPATH, "//table//tbody//tr")
+        )
     except Exception:
         amount_datasets = 0
     return amount_datasets
@@ -72,19 +75,32 @@ def test_upload_dataset():
 
         name_field0 = driver.find_element(By.NAME, "authors-0-name")
         name_field0.send_keys("Author0")
-        affiliation_field0 = driver.find_element(By.NAME, "authors-0-affiliation")
+        affiliation_field0 = driver.find_element(
+            By.NAME,
+            "authors-0-affiliation",
+        )
         affiliation_field0.send_keys("Club0")
-        orcid_field0 = driver.find_element(By.NAME, "authors-0-orcid")
+        orcid_field0 = driver.find_element(
+            By.NAME,
+            "authors-0-orcid",
+        )
         orcid_field0.send_keys("0000-0000-0000-0000")
 
         name_field1 = driver.find_element(By.NAME, "authors-1-name")
         name_field1.send_keys("Author1")
-        affiliation_field1 = driver.find_element(By.NAME, "authors-1-affiliation")
+        affiliation_field1 = driver.find_element(
+            By.NAME,
+            "authors-1-affiliation",
+        )
         affiliation_field1.send_keys("Club1")
 
         # Obtén las rutas absolutas de los archivos
-        file1_path = os.path.abspath("app/modules/dataset/uvl_examples/file1.uvl")
-        file2_path = os.path.abspath("app/modules/dataset/uvl_examples/file2.uvl")
+        file1_path = os.path.abspath(
+            "app/modules/dataset/uvl_examples/file1.uvl"
+        )
+        file2_path = os.path.abspath(
+            "app/modules/dataset/uvl_examples/file2.uvl"
+        )
 
         # Subir el primer archivo
         dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
@@ -99,13 +115,21 @@ def test_upload_dataset():
         # Add authors in UVL models
         show_button = driver.find_element(By.ID, "0_button")
         show_button.send_keys(Keys.RETURN)
-        add_author_uvl_button = driver.find_element(By.ID, "0_form_authors_button")
+        add_author_uvl_button = driver.find_element(
+            By.ID, "0_form_authors_button"
+        )
         add_author_uvl_button.send_keys(Keys.RETURN)
         wait_for_page_to_load(driver)
 
-        name_field = driver.find_element(By.NAME, "feature_models-0-authors-2-name")
+        name_field = driver.find_element(
+            By.NAME,
+            "feature_models-0-authors-2-name",
+        )
         name_field.send_keys("Author3")
-        affiliation_field = driver.find_element(By.NAME, "feature_models-0-authors-2-affiliation")
+        affiliation_field = driver.find_element(
+            By.NAME,
+            "feature_models-0-authors-2-affiliation",
+        )
         affiliation_field.send_keys("Club3")
 
         # Check I agree and send form
@@ -127,9 +151,60 @@ def test_upload_dataset():
         print("Test passed!")
 
     finally:
-
         # Close the browser
         close_driver(driver)
+
+
+def test_testcarritos(self):
+    self.driver.get("http://localhost:5000/")
+    self.driver.set_window_size(1854, 1048)
+    self.driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".list-group-item:nth-child(2) .add-to-cart",
+    ).click()
+    self.driver.find_element(By.ID, "carritoDropdown").click()
+    self.driver.find_element(By.CSS_SELECTOR, ".fa-solid").click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".list-group-item:nth-child(2) .add-to-cart",
+    ).click()
+    self.driver.find_element(By.ID, "carritoDropdown").click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".list-group-item:nth-child(2) .add-to-cart",
+    ).click()
+    assert (
+        self.driver.switch_to.alert.text
+        == "Este archivo ya está en el carrito."
+    )
+    self.driver.find_element(By.ID, "carritoDropdown").click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".flex-grow-1:nth-child(2)",
+    ).click()
+    self.driver.find_element(By.CSS_SELECTOR, ".content").click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".list-group-item:nth-child(2) .add-to-cart",
+    ).click()
+    assert (
+        self.driver.switch_to.alert.text
+        == "Este archivo ya está en el carrito."
+    )
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".list-group-item:nth-child(3) .add-to-cart",
+    ).click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".list-group-item:nth-child(4) .add-to-cart",
+    ).click()
+    self.driver.find_element(By.ID, "carritoDropdown").click()
+    self.driver.find_element(
+        By.CSS_SELECTOR,
+        ".flex-grow-1:nth-child(1)",
+    ).click()
 
 
 # Call the test function

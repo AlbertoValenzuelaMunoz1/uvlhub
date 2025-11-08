@@ -14,7 +14,8 @@ from app.modules.hubfile.models import Hubfile
 @pytest.fixture(scope="function")
 def test_database_poblated(test_app):
     """
-    Extends the test_client fixture to add additional specific data for module testing.
+    Extends the test_client fixture to add additional specific data
+    for module testing.
     """
     working_dir = Path(__file__).resolve().parents[5]
     os.environ.setdefault("WORKING_DIR", str(working_dir))
@@ -35,10 +36,15 @@ def test_download_bulk_files_returns_zip(test_database_poblated):
     assert len(files) == 2
     file_ids = [file.id for file in files]
 
-    response = test_database_poblated.post("/file/download/bulk", json={"file_ids": file_ids})
+    response = test_database_poblated.post(
+        "/file/download/bulk",
+        json={"file_ids": file_ids},
+    )
 
     assert response.status_code == 200
-    assert response.headers.get("Content-Type", "").startswith("application/zip")
+    assert response.headers.get("Content-Type", "").startswith(
+        "application/zip"
+    )
 
     zip_file = zipfile.ZipFile(io.BytesIO(response.data))
     zip_names = set(zip_file.namelist())
@@ -49,7 +55,10 @@ def test_download_bulk_files_returns_zip(test_database_poblated):
 
 
 def test_download_bulk_files_requires_files(test_database_poblated):
-    response = test_database_poblated.post("/file/download/bulk", json={"file_ids": []})
+    response = test_database_poblated.post(
+        "/file/download/bulk",
+        json={"file_ids": []},
+    )
 
     assert response.status_code == 400
     assert response.get_json()["error"] == "No files selected"
