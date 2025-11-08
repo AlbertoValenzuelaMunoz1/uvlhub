@@ -5,7 +5,6 @@ from app.modules.auth.models import User
 from app.modules.auth.seeders import AuthSeeder
 from app.modules.dataset.seeders import DataSetSeeder
 
-
 @pytest.fixture(scope="session")
 def test_app():
     """Create and configure a new app instance for each test session."""
@@ -52,7 +51,20 @@ def clean_database():
     db.session.remove()
     db.drop_all()
     db.create_all()
-
+@pytest.fixture(scope="function")
+def test_database_poblated(test_app):
+    """
+    Extends the test_client fixture to add additional specific data for module testing.
+    """
+    with test_app.test_client() as testing_client:
+        with test_app.app_context():
+            db.drop_all()
+            db.create_all()
+            AuthSeeder().run()
+            DataSetSeeder().run()
+            yield testing_client
+            db.session.remove()
+            db.drop_all()
 
 def login(test_client, email, password):
     """
