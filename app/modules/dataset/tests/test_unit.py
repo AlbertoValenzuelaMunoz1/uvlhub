@@ -21,12 +21,17 @@ def _build_download_url(test_client, dataset_id):
     part with the actual id. Fall back to the common pattern if none found.
     """
     app = test_client.application
-    for rule in app.url_map.iter_rules():
-        # look for a rule path that contains 'download' and a variable segment
-        if 'download' in rule.rule and '<' in rule.rule:
-            url = re.sub(r'<[^>]+>', str(dataset_id), rule.rule)
+    rules = list(app.url_map.iter_rules())
+
+    # Prefer download routes that belong to the dataset blueprint
+    dataset_rules = [rule for rule in rules if rule.endpoint.startswith("dataset.") and "download" in rule.rule]
+    for rule in dataset_rules or rules:
+        if "download" in rule.rule and "<" in rule.rule:
+            url = re.sub(r"<[^>]+>", str(dataset_id), rule.rule)
             return url
-    return f"/dataset/{dataset_id}/download"
+
+    # Fallback to the actual dataset download pattern
+    return f"/dataset/download/{dataset_id}"
 
 
 def test_downloadcounter_successful(test_database_poblated):
