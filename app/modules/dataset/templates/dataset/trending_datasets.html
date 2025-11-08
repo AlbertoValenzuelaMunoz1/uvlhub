@@ -13,7 +13,7 @@
                 <strong>Más descargados (última semana)</strong>
             </div>
             <div class="card-body">
-                <table class="table">
+                <table id="most-downloaded" class="table">
                     <tbody>
                         {% for dataset in most_downloaded %}
                         <div class="card">
@@ -28,9 +28,7 @@
                                     </h2>
 
                                     <div>
-                                        <p>Número de descargas:</p>
-                                        <span class="badge bg-secondary">{{ dataset.get_number_of_downloads()
-                                            }}</span>
+                                        <span id="downloads-number-badge" class="badge bg-secondary ms-2">Downloads: {{ dataset.get_number_of_downloads() or 0 }}</span>
                                     </div>
                                 </div>
 
@@ -77,7 +75,7 @@
                 <strong>Más vistos (última semana)</strong>
             </div>
             <div class="card-body">
-                <table class="table">
+                <table id="most-viewed" class="table">
                     <tbody>
                         {% for dataset in most_viewed %}
                         <div class="card">
@@ -90,8 +88,7 @@
                                     </h2>
 
                                     <div>
-                                        <p>Número de vistas:</p>
-                                        <span class="badge bg-secondary">{{ dataset.get_number_of_views() }}</span>
+                                        <span id="views-number-badge" class="badge bg-secondary ms-2">Views: {{ dataset.get_number_of_views() or 0 }}</span>
                                     </div>
                                 </div>
 

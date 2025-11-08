@@ -2,6 +2,8 @@ import pytest
 
 from app import create_app, db
 from app.modules.auth.models import User
+from app.modules.auth.seeders import AuthSeeder
+from app.modules.dataset.seeders import DataSetSeeder
 
 
 @pytest.fixture(scope="session")
@@ -79,3 +81,18 @@ def logout(test_client):
         response: Response to GET request to log out.
     """
     return test_client.get("/logout", follow_redirects=True)
+
+@pytest.fixture(scope="function")
+def test_database_poblated(test_app):
+    """
+    Extends the test_client fixture to add additional specific data for module testing.
+    """
+    with test_app.test_client() as testing_client:
+        with test_app.app_context():
+            db.drop_all()
+            db.create_all()
+            AuthSeeder().run()
+            DataSetSeeder().run()
+            yield testing_client
+            db.session.remove()
+            db.drop_all()

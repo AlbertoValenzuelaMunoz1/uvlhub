@@ -132,5 +132,31 @@ def test_upload_dataset():
         close_driver(driver)
 
 
+""" def test_downloadstest():
+    driver = initialize_driver()
+    host = get_host_for_selenium_testing()
+    driver.get(host)
+    driver.set_window_size(1470, 919)
+    driver.find_element(By.LINK_TEXT, "Trending Datasets").click()
+    tbody = driver.find_element(By.ID, "most-downloaded")
+    filas = tbody.find_elements(By.TAG_NAME, "div")
+    assert len(filas) == 0, "❌ La tabla NO está vacía"
+    driver.find_element(By.LINK_TEXT, "Home").click()
+    driver.find_element(By.LINK_TEXT, "Download (1.21 KB)").click()
+    driver.find_element(By.LINK_TEXT, "Trending Datasets").click()
+    driver.find_element(By.LINK_TEXT, "Home").click()
+    driver.find_element(By.CSS_SELECTOR, ".card:nth-child(4) .btn:nth-child(2)").click()
+    driver.find_element(By.LINK_TEXT, "Trending Datasets").click()
+    driver.find_element(By.LINK_TEXT, "Home").click()
+    driver.find_element(By.LINK_TEXT, "Download (1.21 KB)").click()
+    driver.find_element(By.LINK_TEXT, "Trending Datasets").click()
+    driver.find_element(By.LINK_TEXT, "Home").click()
+    driver.find_element(By.LINK_TEXT, "Download (1.21 KB)").click()
+    driver.find_element(By.LINK_TEXT, "Trending Datasets").click()
+    driver.find_element(By.LINK_TEXT, "Home").click()
+    driver.find_element(By.CSS_SELECTOR, ".card:nth-child(3) .btn:nth-child(2)").click()
+    driver.find_element(By.LINK_TEXT, "Trending Datasets").click() """
+
 # Call the test function
 test_upload_dataset()
+""" test_downloadstest()"""
