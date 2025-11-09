@@ -30,12 +30,13 @@ def upload_file(id):
 @fakenodo_bp.route("/fakenodo/<int:id>/actions/publish", methods=["POST"])
 def publish_deposition(id):
     unique_id = uuid.uuid4().int  
-    return jsonify({"doi": f"10.1234/{unique_id}","id":1,"conceptrecid":1}), 201
+    return jsonify({"doi": f"10.1234/{unique_id}","id":1,"conceptrecid":1}), 202
 
 
 @fakenodo_bp.route("/fakenodo/<int:id>", methods=["GET"])
 def get_deposition(id):
     unique_id = uuid.uuid4().int
+    print(unique_id)
     return jsonify({"doi": f"10.1234/{unique_id}","id":1,"conceptrecid":1}), 200
 
 
