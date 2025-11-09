@@ -1,8 +1,19 @@
 import os
+import shutil
+import tempfile
 import uuid
 from datetime import datetime, timezone
+from zipfile import ZipFile
 
-from flask import current_app, jsonify, make_response, request, send_from_directory
+from flask import (
+    after_this_request,
+    current_app,
+    jsonify,
+    make_response,
+    request,
+    send_file,
+    send_from_directory,
+)
 from flask_login import current_user
 
 from app import db
@@ -44,6 +55,77 @@ def download_file(file_id):
     resp.set_cookie("file_download_cookie", user_cookie)
 
     return resp
+
+
+@hubfile_bp.route("/file/download/bulk", methods=["POST"])
+def download_bulk_files():
+    data = request.get_json() or {}
+    file_ids = data.get("file_ids", [])
+
+    if not isinstance(file_ids, list) or len(file_ids) == 0:
+        return jsonify({"error": "No files selected"}), 400
+
+    try:
+        file_ids = [int(file_id) for file_id in file_ids]
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid file identifiers"}), 400
+
+    hubfile_service = HubfileService()
+    files = [hubfile_service.get_or_404(file_id) for file_id in file_ids]
+
+    parent_directory_path = os.path.dirname(current_app.root_path)
+
+    temp_dir = tempfile.mkdtemp()
+    zip_filename = f"uvlhub_cart_{uuid.uuid4().hex}.zip"
+    zip_path = os.path.join(temp_dir, zip_filename)
+
+    with ZipFile(zip_path, "w") as zipf:
+        for file in files:
+            directory_path = (
+                f"uploads/user_{file.feature_model.data_set.user_id}/"
+                f"dataset_{file.feature_model.data_set_id}/"
+            )
+            absolute_path = os.path.join(parent_directory_path, directory_path, file.name)
+            if not os.path.exists(absolute_path):
+                continue
+            archive_name = os.path.join(f"dataset_{file.feature_model.data_set_id}", file.name)
+            zipf.write(absolute_path, arcname=archive_name)
+
+    user_cookie = request.cookies.get("file_download_cookie")
+    if not user_cookie:
+        user_cookie = str(uuid.uuid4())
+
+    download_service = HubfileDownloadRecordService()
+    for file_id in file_ids:
+        existing_record = HubfileDownloadRecord.query.filter_by(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            file_id=file_id,
+            download_cookie=user_cookie,
+        ).first()
+
+        if not existing_record:
+            download_service.create(
+                user_id=current_user.id if current_user.is_authenticated else None,
+                file_id=file_id,
+                download_date=datetime.now(timezone.utc),
+                download_cookie=user_cookie,
+            )
+
+    @after_this_request
+    def cleanup(response):  # noqa
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return response
+
+    response = make_response(
+        send_file(
+            zip_path,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="uvlhub-cart.zip",
+        )
+    )
+    response.set_cookie("file_download_cookie", user_cookie)
+    return response
 
 
 @hubfile_bp.route("/file/view/<int:file_id>", methods=["GET"])

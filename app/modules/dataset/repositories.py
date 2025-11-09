@@ -5,7 +5,7 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord,Comment
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,9 @@ class DSMetaDataRepository(BaseRepository):
 class DSViewRecordRepository(BaseRepository):
     def __init__(self):
         super().__init__(DSViewRecord)
+
+    def get_view_count(self, dataset_id: int) -> int:
+        return self.model.query.filter_by(dataset_id=dataset_id).count()
 
     def total_dataset_views(self) -> int:
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
@@ -153,3 +156,6 @@ class DOIMappingRepository(BaseRepository):
 
     def get_new_doi(self, old_doi: str) -> str:
         return self.model.query.filter_by(dataset_doi_old=old_doi).first()
+class CommentRepository(BaseRepository):
+    def __init__(self):
+        super().__init__(Comment)
