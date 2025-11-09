@@ -6,7 +6,8 @@ from app.modules.dataset.services import DSMetaDataService,DataSetService
 from app.modules.dataset.models import DataSet
 from app.modules.auth.models import User
 import re
-
+from app import db
+from flask import current_app
 
 
 def test_download_bulk_files_returns_zip(test_database_poblated):
@@ -169,14 +170,6 @@ def test_download_nonexistent_dataset_returns_404(test_database_poblated):
     response = client.get("/dataset/999999/download", follow_redirects=True)
     assert response.status_code in (404, 410), "Non-existent dataset download should return 404 or similar"
 
-from app.modules.dataset.services import DataSetService
-from app import db
-from app.modules.dataset.models import DataSet
-from app.modules.auth.models import User
-from flask import current_app
-import re
-
-
 dataset_service = DataSetService()
 
 
@@ -185,9 +178,6 @@ def _get_first_dataset_and_user():
     user = User.query.first()
     return dataset, user
 
-
-def _build_download_url(dataset_id):
-    return f"/dataset/download/{dataset_id}"
 
 
 def _build_trending_url():
@@ -207,7 +197,7 @@ def test_trending_download_weekly(test_database_poblated):
 
     initial_downloads = dataset.get_number_of_downloads() or 0
 
-    download_url = _build_download_url(dataset.id)
+    download_url = _build_download_url(client, dataset.id)
     response = client.get(download_url, follow_redirects=True)
     assert response.status_code == 200, f"Download request was unsuccessful (GET {download_url})"
 
@@ -224,7 +214,7 @@ def test_trending_multiple_downloads_same_user(test_database_poblated):
 
     initial_downloads = dataset.get_number_of_downloads() or 0
 
-    download_url = _build_download_url(dataset.id)
+    download_url = _build_download_url(client, dataset.id)
 
     # First download
     response1 = client.get(download_url, follow_redirects=True)
@@ -250,7 +240,7 @@ def test_trending_page_renders_and_contains_dataset_info(test_database_poblated)
         pytest.skip("No dataset seeded")
 
     client.get(f"/doi/{dataset.ds_meta_data.dataset_doi}", follow_redirects=True)
-    client.get(_build_download_url(dataset.id), follow_redirects=True)
+    client.get(_build_download_url(client, dataset.id), follow_redirects=True)
     trending_url = _build_trending_url()
     response = client.get(trending_url, follow_redirects=True)
     assert response.status_code == 200, f"GET {trending_url} should return 200"
@@ -284,6 +274,6 @@ def test_trending_download_links_work(test_database_poblated):
     assert page.status_code == 200, f"GET {trending_url} should return 200"
 
     # Intenta descargar usando el enlace estándar de descarga del dataset
-    download_url = _build_download_url(dataset.id)
+    download_url = _build_download_url(client, dataset.id)
     resp = client.get(download_url, follow_redirects=True)
     assert resp.status_code == 200, f"Download from trending page should succeed (GET {download_url})"
