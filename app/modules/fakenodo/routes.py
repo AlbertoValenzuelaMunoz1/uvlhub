@@ -36,7 +36,6 @@ def publish_deposition(id):
 @fakenodo_bp.route("/fakenodo/<int:id>", methods=["GET"])
 def get_deposition(id):
     unique_id = uuid.uuid4().int
-    print(unique_id)
     return jsonify({"doi": f"10.1234/{unique_id}","id":1,"conceptrecid":1}), 200
 
 
