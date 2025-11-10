@@ -16,9 +16,9 @@ def create_deposition():
 
 
 @fakenodo_bp.route("/fakenodo/<int:id>", methods=["DELETE"])
-def delete_deposition(id):
-    unique_id = uuid.uuid4().int  
-    return jsonify({"doi": f"10.1234/{unique_id}"}), 201
+def delete_deposition(id): 
+    return '', 201
+
 
 
 @fakenodo_bp.route("/fakenodo/<int:id>/files", methods=["POST"])
