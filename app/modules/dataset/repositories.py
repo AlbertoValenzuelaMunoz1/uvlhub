@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from flask_login import current_user
@@ -102,6 +102,53 @@ class DataSetRepository(BaseRepository):
             .all()
         )
 
+    def get_trending_datasets_by_downloads(self, days: int = 7, limit: int = 10):
+        # Devuelve los datasets más descargados en los últimos `days` días (por defecto 7).
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        return (
+            self.model.query
+            .join(DSDownloadRecord, DSDownloadRecord.dataset_id == self.model.id)
+            .filter(DSDownloadRecord.download_date >= cutoff)
+            .group_by(self.model.id)
+            .order_by(desc(func.count(DSDownloadRecord.id)))
+            .limit(limit)
+            .all()
+        )
+    
+    def get_number_of_downloads(self, dataset_id: int, days: int = 7) -> int:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        return (
+            DSDownloadRecord.query
+            .filter(
+                DSDownloadRecord.dataset_id == dataset_id,
+                DSDownloadRecord.download_date >= cutoff
+            )
+            .count()
+        )
+
+    def get_trending_datasets_by_views(self, days: int = 7, limit: int = 10):
+        # Devuelve los datasets más vistos en los últimos `days` días (por defecto 7)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        return (
+            self.model.query
+            .join(DSViewRecord, DSViewRecord.dataset_id == self.model.id)
+            .filter(DSViewRecord.view_date >= cutoff)
+            .group_by(self.model.id)
+            .order_by(desc(func.count(DSViewRecord.id)))
+            .limit(limit)
+            .all()
+        )
+    
+    def get_number_of_views(self, dataset_id: int, days: int = 7) -> int:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        return (
+            DSViewRecord.query
+            .filter(
+                DSViewRecord.dataset_id == dataset_id,
+                DSViewRecord.view_date >= cutoff
+            )
+            .count()
+        )
 
 class DOIMappingRepository(BaseRepository):
     def __init__(self):

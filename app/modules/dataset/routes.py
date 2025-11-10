@@ -290,6 +290,19 @@ def get_unsynchronized_dataset(dataset_id):
         abort(404)
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
+
+
+@dataset_bp.route("/trending", methods=["GET", "POST"])
+#@login_required
+def trending_datasets():
+    most_downloaded = dataset_service.get_trending_datasets_by_downloads()
+    most_viewed = dataset_service.get_trending_datasets_by_views()
+    return render_template(
+        "dataset/trending_datasets.html",
+        most_downloaded=most_downloaded,
+        most_viewed=most_viewed,
+    )
+    
 @dataset_bp.route("/datasets/<int:dataset_id>/comments", methods=["POST"])
 @login_required  
 def add_comment(dataset_id):
