@@ -2,6 +2,16 @@
     border: 1px solid red;
 }
 
+body {
+    background: url("../img/photos/backgroundTennisHub.png") no-repeat center center fixed;
+    background-size: cover;
+}
+
+.wrapper,
+.main {
+    background-color: transparent;
+}
+
 .alert-warning {
     background-color: #FFF3CD;
     padding: 20px;
@@ -18,6 +28,12 @@
     background-color: #F9D6D9;
     padding: 20px;
     border-radius: 5px;
+}
+
+.card .card-body,
+.card-body {
+    background: linear-gradient(135deg, #d8f28a 0%, #f7ffde 100%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .fixed-column {
@@ -184,4 +200,68 @@
     color: white;
     padding: 5px;
     border-radius: 3px;
+}
+
+/* Custom sidebar color */
+#sidebar,
+.sidebar.js-sidebar {
+    background: linear-gradient(180deg, #c93c20 0%, #f68017 100%);
+}
+
+#sidebar,
+.sidebar.js-sidebar {
+    position: relative;
+}
+
+#sidebar .sidebar-content,
+#sidebar .simplebar-content-wrapper,
+#sidebar .simplebar-content,
+.sidebar.js-sidebar .sidebar-content,
+.sidebar.js-sidebar .simplebar-content-wrapper,
+.sidebar.js-sidebar .simplebar-content {
+    background: transparent;
+}
+
+#sidebar .sidebar-link,
+#sidebar a.sidebar-link {
+    background-color: transparent;
+    color: #ffffff;
+}
+
+#sidebar .sidebar-link i,
+#sidebar .sidebar-link svg,
+#sidebar a.sidebar-link i,
+#sidebar a.sidebar-link svg {
+    color: #ffffff;
+}
+
+#sidebar .sidebar-link:hover,
+#sidebar .sidebar-link:focus {
+    background: #a3321a;
+    color: #ffffff;
+}
+
+#sidebar .sidebar-item.active > .sidebar-link,
+#sidebar .sidebar-item.active .sidebar-link:hover {
+    background: #8f2c17;
+    border-left-color: #ffffff;
+    color: #ffffff;
+}
+
+#sidebar .sidebar-cta {
+    background-color: #c93c20;
+}
+
+#sidebar .sidebar-cta-content {
+    background-color: #c93c20;
+    color: #ffffff;
+}
+
+/* Hover de los botones */
+button:hover,
+.btn:hover,
+.btn:focus,
+.btn:active {
+    background-color: #2d572c !important;
+    border-color: #2d572c !important;
 }

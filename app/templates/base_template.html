@@ -35,17 +35,22 @@ chico sundermann">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
 
 </head>
 
-<body>
+<body data-page-home="{{ 'true' if request.endpoint == 'public.index' else 'false' }}">
 <div class="wrapper">
 
-    <nav id="sidebar" class="sidebar js-sidebar">
+    <nav id="sidebar" class="sidebar js-sidebar" data-fall-once>
         <div class="sidebar-content js-simplebar">
             <a class="sidebar-brand" href="{{ url_for('public.index') }}">
-                <img src="{{ url_for("static", filename="img/logos/logo-dark.svg") }}" class="d-block"
-                     style="max-width: 100%; height: auto;">
+                <img src="{{ url_for("static", filename="img/logos/tennishub-logo.png") }}" class="d-block"
+                     data-fall-once
+                     style="max-width: 100%; height: auto;" alt="TennisHub logo">
             </a>
 
 
@@ -149,8 +154,8 @@ chico sundermann">
         </div>
     </nav>
 
-    <div class="main">
-        <nav class="navbar navbar-expand navbar-light navbar-bg">
+    <div class="main" data-fall-once>
+        <nav class="navbar navbar-expand navbar-light navbar-bg" data-fall-once>
             <a class="sidebar-toggle js-sidebar-toggle">
                 <i class="hamburger align-self-center"></i>
             </a>
@@ -220,15 +225,15 @@ chico sundermann">
             </div>
         </nav>
 
-        <main class="content">
-            <div class="container p-0">
+        <main class="content" data-fall-once>
+            <div class="container p-0" data-fall-once>
 
                 {% block content %}{% endblock %}
 
             </div>
         </main>
 
-        <footer class="footer">
+        <footer class="footer" data-fall-once>
             <div class="container-fluid">
                 <div class="row text-muted">
                     <div class="col-6 text-start">
@@ -319,6 +324,27 @@ Romero-Organvidez, D., Galindo, J. A., Sundermann, C., Horcas, J.-M., & Benavide
         let query = document.getElementById('search-query').value;
         window.location.href = '/explore?query=' + encodeURIComponent(query);
     }
+
+    // Animación de caída cada vez que entras en Home (public.index)
+    document.addEventListener('DOMContentLoaded', () => {
+        const isHome = document.body.dataset.pageHome === 'true';
+        if (!isHome) {
+            return;
+        }
+
+        const targets = document.querySelectorAll('[data-fall-once]');
+        targets.forEach((el, index) => {
+            el.classList.add('animate__animated', 'animate__fadeInDown', 'animate__faster');
+            el.style.setProperty('--animate-duration', '0.85s');
+            el.style.setProperty('animation-delay', `${index * 80}ms`);
+            el.addEventListener('animationend', () => {
+                el.classList.remove('animate__animated', 'animate__fadeInDown', 'animate__faster');
+                el.style.removeProperty('--animate-duration');
+                el.style.removeProperty('animation-delay');
+            }, { once: true });
+        });
+
+    });
 
     function copyText(div_identifier) {
         let textToCopy = document.getElementById(div_identifier).textContent;
