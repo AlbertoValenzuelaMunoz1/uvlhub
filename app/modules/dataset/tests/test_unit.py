@@ -1,5 +1,8 @@
 import io
+import os
+import tempfile
 import zipfile
+from app.modules.dataset.routes import CSV_REQUIRED_COLUMNS, validate_uploaded_csv_files
 from app.modules.hubfile.models import Hubfile
 from bs4 import BeautifulSoup
 from app.modules.dataset.services import DSMetaDataService,DataSetService
@@ -277,3 +280,55 @@ def test_trending_download_links_work(test_database_poblated):
     download_url = _build_download_url(client, dataset.id)
     resp = client.get(download_url, follow_redirects=True)
     assert resp.status_code == 200, f"Download from trending page should succeed (GET {download_url})"
+
+
+def _dummy_feature(filename):
+    class DummyField:
+        def __init__(self, data):
+            self.data = data
+
+    class DummyFeature:
+        def __init__(self, name):
+            self.uvl_filename = DummyField(name)
+
+    return DummyFeature(filename)
+
+
+def _write_csv(path, headers):
+    with open(path, "w", encoding="utf-8") as handler:
+        handler.write(",".join(headers) + "\n")
+        handler.write(",".join(["sample"] * len(headers)))
+
+
+def test_validate_uploaded_csv_files_accepts_matching_headers():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = "valid.csv"
+        file_path = os.path.join(tmpdir, filename)
+        _write_csv(file_path, CSV_REQUIRED_COLUMNS)
+
+        error = validate_uploaded_csv_files(tmpdir, [_dummy_feature(filename)])
+
+        assert error is None
+
+
+def test_validate_uploaded_csv_files_rejects_missing_headers():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = "missing.csv"
+        file_path = os.path.join(tmpdir, filename)
+        _write_csv(file_path, CSV_REQUIRED_COLUMNS[:-1])  # drop last column
+
+        error = validate_uploaded_csv_files(tmpdir, [_dummy_feature(filename)])
+
+        assert error is not None
+        assert "missing columns" in error
+
+
+def test_validate_uploaded_csv_files_requires_csv_extension():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = "invalid.txt"
+        file_path = os.path.join(tmpdir, filename)
+        _write_csv(file_path, CSV_REQUIRED_COLUMNS)
+
+        error = validate_uploaded_csv_files(tmpdir, [_dummy_feature(filename)])
+
+        assert error == f"{filename} must be a CSV file."
