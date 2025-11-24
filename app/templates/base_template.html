@@ -35,17 +35,72 @@ chico sundermann">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+
+    <style>
+        /* Pelota TennisHub: roll in/out izquierda->derecha (una sola vez en home) */
+        .rolling-ball {
+            position: fixed;
+            top: -20vh;
+            left: -60vh;
+            width: 120vh;
+            height: 120vh;
+            z-index: 3000;
+            pointer-events: none;
+            animation: rolling-ball-path 1s linear forwards;
+            will-change: transform, opacity;
+        }
+
+        .rolling-ball img {
+            width: 120%;
+            height: 120%;
+            object-fit: contain;
+            animation: rolling-ball-spin 1.8s linear infinite;
+            filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.22));
+        }
+
+        @keyframes rolling-ball-path {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(0.9);
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+                transform: translate(140vw, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(170vw, 0) scale(1);
+            }
+        }
+
+        @keyframes rolling-ball-spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 
 </head>
 
-<body>
+<body data-page-home="{{ 'true' if request.endpoint == 'public.index' else 'false' }}">
 <div class="wrapper">
 
-    <nav id="sidebar" class="sidebar js-sidebar">
+    <nav id="sidebar" class="sidebar js-sidebar" data-fall-once>
         <div class="sidebar-content js-simplebar">
             <a class="sidebar-brand" href="{{ url_for('public.index') }}">
-                <img src="{{ url_for("static", filename="img/logos/logo-dark.svg") }}" class="d-block"
-                     style="max-width: 100%; height: auto;">
+                <img src="{{ url_for("static", filename="img/logos/tennishub-logo.png") }}" class="d-block"
+                     data-fall-once
+                     style="max-width: 100%; height: auto;" alt="TennisHub logo">
             </a>
 
 
@@ -149,8 +204,8 @@ chico sundermann">
         </div>
     </nav>
 
-    <div class="main">
-        <nav class="navbar navbar-expand navbar-light navbar-bg">
+    <div class="main" data-fall-once>
+        <nav class="navbar navbar-expand navbar-light navbar-bg" data-fall-once>
             <a class="sidebar-toggle js-sidebar-toggle">
                 <i class="hamburger align-self-center"></i>
             </a>
@@ -220,15 +275,15 @@ chico sundermann">
             </div>
         </nav>
 
-        <main class="content">
-            <div class="container p-0">
+        <main class="content" data-fall-once>
+            <div class="container p-0" data-fall-once>
 
                 {% block content %}{% endblock %}
 
             </div>
         </main>
 
-        <footer class="footer">
+        <footer class="footer" data-fall-once>
             <div class="container-fluid">
                 <div class="row text-muted">
                     <div class="col-6 text-start">
@@ -319,6 +374,65 @@ Romero-Organvidez, D., Galindo, J. A., Sundermann, C., Horcas, J.-M., & Benavide
         let query = document.getElementById('search-query').value;
         window.location.href = '/explore?query=' + encodeURIComponent(query);
     }
+
+    // Animación de caída cada vez que entras en Home (public.index)
+    document.addEventListener('DOMContentLoaded', () => {
+        const isHome = document.body.dataset.pageHome === 'true';
+        if (!isHome) {
+            return;
+        }
+
+        const targets = document.querySelectorAll('[data-fall-once]');
+        targets.forEach((el, index) => {
+            el.classList.add('animate__animated', 'animate__fadeInLeft', 'animate__faster');
+            el.style.setProperty('--animate-duration', '0.85s');
+            el.style.setProperty('animation-delay', `${index * 80}ms`);
+            el.addEventListener('animationend', () => {
+                el.classList.remove('animate__animated', 'animate__fadeInLeft', 'animate__faster');
+                el.style.removeProperty('--animate-duration');
+                el.style.removeProperty('animation-delay');
+            }, { once: true });
+        });
+
+    });
+
+    // Pelota TennisHub: roll in/out solo la primera vez que entras en Home
+    document.addEventListener('DOMContentLoaded', () => {
+        const isHome = document.body.dataset.pageHome === 'true';
+        if (!isHome) return;
+
+        const storageKey = 'uvlhub_ball_roll_once';
+        const canStore = (() => {
+            try {
+                const k = '__uvl_test__';
+                localStorage.setItem(k, '1');
+                localStorage.removeItem(k);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        })();
+
+        if (canStore && localStorage.getItem(storageKey)) {
+            return;
+        }
+
+        const ball = document.createElement('div');
+        ball.className = 'rolling-ball';
+        const img = document.createElement('img');
+        img.alt = 'Tennis ball';
+        img.src = "{{ url_for('static', filename='img/photos/pelotaTennis.png') }}";
+        ball.appendChild(img);
+        document.body.appendChild(ball);
+
+        ball.addEventListener('animationend', () => {
+            ball.remove();
+        }, { once: true });
+
+        if (canStore) {
+            localStorage.setItem(storageKey, '1');
+        }
+    });
 
     function copyText(div_identifier) {
         let textToCopy = document.getElementById(div_identifier).textContent;
