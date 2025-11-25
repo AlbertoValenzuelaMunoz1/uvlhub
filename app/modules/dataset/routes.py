@@ -1,3 +1,4 @@
+import csv
 import json
 import logging
 import os
@@ -46,6 +47,97 @@ zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
 
+CSV_REQUIRED_COLUMNS = [
+    "ATP",
+    "Location",
+    "Tournament",
+    "Date",
+    "Series",
+    "Court",
+    "Surface",
+    "Round",
+    "Best of",
+    "Winner",
+    "Loser",
+    "WRank",
+    "LRank",
+    "WPts",
+    "LPts",
+    "W1",
+    "L1",
+    "W2",
+    "L2",
+    "W3",
+    "L3",
+    "W4",
+    "L4",
+    "W5",
+    "L5",
+    "Wsets",
+    "Lsets",
+    "Comment",
+    "B365W",
+    "B365L",
+    "PSW",
+    "PSL",
+    "MaxW",
+    "MaxL",
+    "AvgW",
+    "AvgL",
+]
+
+
+def validate_uploaded_csv_files(temp_folder, feature_models):
+    """Ensure every uploaded file is a CSV matching the required tennis columns."""
+    for feature_model in feature_models:
+        file_name = feature_model.uvl_filename.data
+
+        if not file_name:
+            return "Each uploaded file must include a filename."
+
+        if not file_name.lower().endswith(".csv"):
+            return f"{file_name} must be a CSV file."
+
+        file_path = os.path.join(temp_folder, file_name)
+        if not os.path.isfile(file_path):
+            return f"{file_name} not found in the temporary upload folder."
+
+        try:
+            with open(file_path, "r", newline="", encoding="utf-8-sig") as csv_file:
+                sample = csv_file.read(2048)
+                csv_file.seek(0)
+                try:
+                    dialect = csv.Sniffer().sniff(sample)
+                except csv.Error:
+                    dialect = csv.excel
+                reader = csv.reader(csv_file, dialect)
+                headers = next(reader, None)
+        except Exception as exc:
+            logger.exception("Error reading uploaded CSV %s", file_name)
+            return f"Could not read {file_name}: {exc}"
+
+        if not headers:
+            return f"{file_name} is empty or missing a header row."
+
+        normalized_headers = [header.strip() for header in headers]
+
+        if normalized_headers != CSV_REQUIRED_COLUMNS:
+            missing = [col for col in CSV_REQUIRED_COLUMNS if col not in normalized_headers]
+            extras = [col for col in normalized_headers if col not in CSV_REQUIRED_COLUMNS]
+            details = []
+            if missing:
+                details.append(f"missing columns: {', '.join(missing)}")
+            if extras:
+                details.append(f"unexpected columns: {', '.join(extras)}")
+
+            detail_msg = "; ".join(details) if details else "columns are out of order"
+            return (
+                f"{file_name} must include the columns "
+                f"{', '.join(CSV_REQUIRED_COLUMNS)}; {detail_msg}."
+            )
+
+    return None
+
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
 @login_required
@@ -57,6 +149,11 @@ def create_dataset():
 
         if not form.validate_on_submit():
             return jsonify({"message": form.errors}), 400
+
+        temp_folder = current_user.temp_folder()
+        validation_error = validate_uploaded_csv_files(temp_folder, form.feature_models)
+        if validation_error:
+            return jsonify({"message": validation_error}), 400
 
         try:
             logger.info("Creating dataset...")
@@ -126,8 +223,8 @@ def upload():
     file = request.files["file"]
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.endswith(".uvl"):
-        return jsonify({"message": "No valid file"}), 400
+    if not file or not file.filename.lower().endswith(".csv"):
+        return jsonify({"message": "No valid file, only .csv allowed"}), 400
 
     # create temp folder
     if not os.path.exists(temp_folder):
@@ -154,7 +251,7 @@ def upload():
     return (
         jsonify(
             {
-                "message": "UVL uploaded and validated successfully",
+                "message": "CSV uploaded and validated successfully",
                 "filename": new_filename,
             }
         ),

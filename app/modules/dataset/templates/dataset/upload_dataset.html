@@ -214,7 +214,7 @@
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
-            <h1 class="h3 mb-3 mt-2">UVL models</h1>
+            <h1 class="h3 mb-3 mt-2">CSV models</h1>
 
             <div id="uploaded_models_form" style="padding-left: 2rem">
 
@@ -232,7 +232,7 @@
                         url: "/dataset/file/upload",
                         paramName: 'file',
                         maxFilesize: 10,
-                        acceptedFiles: '.uvl',
+                        acceptedFiles: '.csv',
                         init: function () {
 
                             let fileList = document.getElementById('file-list');
@@ -241,8 +241,8 @@
 
                             this.on('addedfile', function (file) {
 
-                                let ext = file.name.split('.').pop();
-                                if (ext !== 'uvl') {
+                                let ext = file.name.split('.').pop().toLowerCase();
+                                if (ext !== 'csv') {
                                     this.removeFile(file);
 
                                     let alert = document.createElement('p');
@@ -260,7 +260,7 @@
                                 show_upload_dataset();
 
                                 console.log("File uploaded: ", response);
-                                // actions when UVL model is uploaded
+                                // actions when CSV model is uploaded
                                 let listItem = document.createElement('li');
                                 let h4Element = document.createElement('h4');
                                 h4Element.textContent = response.filename;
@@ -342,11 +342,11 @@
 
                                 /*
                                     ##########################################
-                                    UVL FORM
+                                    CSV FORM
                                     ##########################################
                                 */
 
-                                // create specific form for UVL
+                                // create specific form for CSV
                                 let formContainer = document.createElement('div');
                                 formContainer.id = formUniqueId + "_form";
                                 formContainer.classList.add('uvl_form', "mt-3");
@@ -434,7 +434,7 @@
                             this.on('error', function (file, response) {
                                 console.error("Error uploading file: ", response);
                                 let alert = document.createElement('p');
-                                alert.textContent = 'UVL not valid: ' + file.name;
+                                alert.textContent = 'CSV not valid: ' + file.name;
                                 alerts.appendChild(alert);
                                 alerts.style.display = 'block';
                             });
