@@ -1,0 +1,33 @@
+{% extends "base_template.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Two-Factor Authentication</h3>
+                </div>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} m-3" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <div class="card-body">
+                    <p>Please enter the code from your authenticator app to complete your login.</p>
+                    <form method="POST" action="{{ url_for('auth.login_2fa') }}">
+                        {{ form.csrf_token }}
+                        {{ render_field(form.token, class="form-control", placeholder="6-digit code", autofocus=true, label_visible=false) }}
+                        {{ render_field(form.submit, class="btn btn-primary w-100 mt-3") }}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

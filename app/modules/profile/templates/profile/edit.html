@@ -103,6 +103,34 @@
 
         </div>
 
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm mt-4 mt-lg-0">
+                <div class="card-header card-dark">
+                    <h5 class="card-title mb-0" style="color: white; font-size: 15px;">Account Security</h5>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Two-Factor Authentication (2FA)</h5>
+                    {% if current_user.has_2fa_enabled %}
+                        <p>Two-factor authentication is <strong>enabled</strong>.</p>
+                        <p>To disable it, enter a code from your authenticator app.</p>
+                        <form action="{{ url_for('auth.disable_2fa') }}" method="post">
+                            <div class="form-group mb-3" style="max-width: 300px;">
+                                <label for="token" class="form-label">Authentication Token</label>
+                                <input type="text" name="token" id="token" class="form-control" required placeholder="6-digit code" autocomplete="off">
+                            </div>
+                            <button type="submit" class="btn btn-danger">Disable 2FA</button>
+                        </form>
+                    {% else %}
+                        <p>Two-factor authentication is <strong>disabled</strong>.</p>
+                        <p>Add an extra layer of security to your account.</p>
+                        <a href="{{ url_for('auth.enable_2fa') }}" class="btn btn-success">Enable 2FA</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+
+
         <div class="row">
 
             <div class="col-lg-6 col-12">
