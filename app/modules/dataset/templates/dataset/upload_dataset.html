@@ -214,7 +214,7 @@
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
-            <h1 class="h3 mb-3 mt-2">CSV models</h1>
+            <h1 class="h3 mb-3 mt-2">Models (CSV / UVL)</h1>
 
             <div id="uploaded_models_form" style="padding-left: 2rem">
 
@@ -228,133 +228,83 @@
                 <ul class="mt-2" id="file-list"></ul>
 
                 <script>
-                    let dropzone = Dropzone.options.myDropzone = {
-                        url: "/dataset/file/upload",
-                        paramName: 'file',
-                        maxFilesize: 10,
-                        acceptedFiles: '.csv',
-                        init: function () {
+                    const fileList = document.getElementById('file-list');
+                    const alerts = document.getElementById('alerts');
 
-                            let fileList = document.getElementById('file-list');
-                            let dropzoneText = document.getElementById('dropzone-text');
-                            let alerts = document.getElementById('alerts');
+                    function appendCsvEntry(filename, dropzoneInstance = null) {
+                        if (!fileList) {
+                            return;
+                        }
+                        show_upload_dataset();
 
-                            this.on('addedfile', function (file) {
+                        let listItem = document.createElement('li');
+                        let h4Element = document.createElement('h4');
+                        h4Element.textContent = filename;
+                        listItem.appendChild(h4Element);
 
-                                let ext = file.name.split('.').pop().toLowerCase();
-                                if (ext !== 'csv') {
-                                    this.removeFile(file);
+                        let formUniqueId = generateIncrementalId();
 
-                                    let alert = document.createElement('p');
-                                    alert.textContent = 'Invalid file extension: ' + file.name;
-                                    alerts.appendChild(alert);
-                                    alerts.style.display = 'block';
-                                }
+                        let formButton = document.createElement('button');
+                        formButton.innerHTML = 'Show info';
+                        formButton.classList.add('info-button', 'btn', 'btn-outline-secondary', "btn-sm");
+                        formButton.style.borderRadius = '5px';
+                        formButton.id = formUniqueId + "_button";
 
-                            });
+                        let formContainer = document.createElement('div');
+                        formContainer.id = formUniqueId + "_form";
+                        formContainer.classList.add('uvl_form', "mt-3");
+                        formContainer.style.display = "none";
 
-                            this.on('success', function (file, response) {
-
-                                let dropzone = this;
-
-                                show_upload_dataset();
-
-                                console.log("File uploaded: ", response);
-                                // actions when CSV model is uploaded
-                                let listItem = document.createElement('li');
-                                let h4Element = document.createElement('h4');
-                                h4Element.textContent = response.filename;
-                                listItem.appendChild(h4Element);
-
-                                // generate incremental id for form
-                                let formUniqueId = generateIncrementalId();
-
-                                /*
-                                    ##########################################
-                                    FORM BUTTON
-                                    ##########################################
-                                */
-                                let formButton = document.createElement('button');
-                                formButton.innerHTML = 'Show info';
-                                formButton.classList.add('info-button', 'btn', 'btn-outline-secondary', "btn-sm");
-                                formButton.style.borderRadius = '5px';
-                                formButton.id = formUniqueId + "_button";
-
-                                formButton.addEventListener('click', function () {
-                                    if (formContainer.style.display === "none") {
-                                        formContainer.style.display = "block";
-                                        formButton.innerHTML = 'Hide info';
-                                    } else {
-                                        formContainer.style.display = "none";
-                                        formButton.innerHTML = 'Add info';
-                                    }
-                                });
-
-                                // append space
-                                let space = document.createTextNode(" ");
-                                listItem.appendChild(space);
-
-                                /*
-                                    ##########################################
-                                    REMOVE BUTTON
-                                    ##########################################
-                                */
-
-                                // remove button
-                                let removeButton = document.createElement('button');
-                                removeButton.innerHTML = 'Delete model';
-                                removeButton.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm", "remove-button");
-                                removeButton.style.borderRadius = '5px';
-
-                                // append space
-                                space = document.createTextNode(" ");
-                                listItem.appendChild(space);
-
-                                removeButton.addEventListener('click', function () {
-                                    fileList.removeChild(listItem);
-                                    this.removeFile(file);
-
-                                    // Ajax request
-                                    let xhr = new XMLHttpRequest();
-                                    xhr.open('POST', '/dataset/file/delete', true);
-                                    xhr.setRequestHeader('Content-Type', 'application/json');
-                                    xhr.onload = function () {
-                                        if (xhr.status === 200) {
-                                            console.log('Deleted file from server');
-
-                                            if (dropzone.files.length === 0) {
-                                                document.getElementById("upload_dataset").style.display = "none";
-                                                clean_upload_errors();
-                                            }
-
-                                        }
-                                    };
-                                    xhr.send(JSON.stringify({file: file.name}));
-                                }.bind(this));
-
-                                /*
-                                    ##########################################
-                                    APPEND BUTTONS
-                                    ##########################################
-                                */
-                                listItem.appendChild(formButton);
-                                listItem.appendChild(removeButton);
-
-                                /*
-                                    ##########################################
-                                    CSV FORM
-                                    ##########################################
-                                */
-
-                                // create specific form for CSV
-                                let formContainer = document.createElement('div');
-                                formContainer.id = formUniqueId + "_form";
-                                formContainer.classList.add('uvl_form', "mt-3");
+                        formButton.addEventListener('click', function () {
+                            if (formContainer.style.display === "none") {
+                                formContainer.style.display = "block";
+                                formButton.innerHTML = 'Hide info';
+                            } else {
                                 formContainer.style.display = "none";
+                                formButton.innerHTML = 'Add info';
+                            }
+                        });
 
-                                formContainer.innerHTML = `
+                        let space = document.createTextNode(" ");
+                        listItem.appendChild(space);
+
+                        let removeButton = document.createElement('button');
+                        removeButton.innerHTML = 'Delete model';
+                        removeButton.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm", "remove-button");
+                        removeButton.style.borderRadius = '5px';
+
+                        space = document.createTextNode(" ");
+                        listItem.appendChild(space);
+
+                        removeButton.addEventListener('click', function () {
+                            fileList.removeChild(listItem);
+                            if (dropzoneInstance && typeof dropzoneInstance.removeFile === 'function') {
+                                const dzFile = dropzoneInstance.files.find(f => f.name === filename);
+                                if (dzFile) {
+                                    dropzoneInstance.removeFile(dzFile);
+                                }
+                            }
+
+                            let xhr = new XMLHttpRequest();
+                            xhr.open('POST', '/dataset/file/delete', true);
+                            xhr.setRequestHeader('Content-Type', 'application/json');
+                            xhr.onload = function () {
+                                if (xhr.status === 200) {
+                                    if (!fileList.children.length) {
+                                        document.getElementById("upload_dataset").style.display = "none";
+                                        clean_upload_errors();
+                                    }
+                                }
+                            };
+                            xhr.send(JSON.stringify({file: filename}));
+                        });
+
+                        listItem.appendChild(formButton);
+                        listItem.appendChild(removeButton);
+
+                        formContainer.innerHTML = `
                                     <div class="row">
-                                        <input type="hidden" value="${response.filename}" name="feature_models-${formUniqueId}-uvl_filename">
+                                        <input type="hidden" value="${filename}" name="feature_models-${formUniqueId}-uvl_filename">
                                         <div class="col-12">
                                             <div class="row">
                                                 <div class="col-12">
@@ -426,9 +376,35 @@
                                     </div>
                                     `;
 
-                                listItem.appendChild(formContainer);
-                                fileList.appendChild(listItem);
+                        listItem.appendChild(formContainer);
+                        fileList.appendChild(listItem);
+                    }
 
+                    const prefilledFiles = {{ prefilled_files|default([], true)|tojson }};
+
+                    let dropzone = Dropzone.options.myDropzone = {
+                        url: "/dataset/file/upload",
+                        paramName: 'file',
+                        maxFilesize: 10,
+                        acceptedFiles: '.csv,.uvl',
+                        init: function () {
+
+                            this.on('addedfile', function (file) {
+
+                                let ext = file.name.split('.').pop().toLowerCase();
+                                if (ext !== 'csv' && ext !== 'uvl') {
+                                    this.removeFile(file);
+
+                                    let alert = document.createElement('p');
+                                    alert.textContent = 'Invalid file extension: ' + file.name + ' (allowed: .csv, .uvl)';
+                                    alerts.appendChild(alert);
+                                    alerts.style.display = 'block';
+                                }
+
+                            });
+
+                            this.on('success', function (file, response) {
+                                appendCsvEntry(response.filename, this);
                             });
 
                             this.on('error', function (file, response) {
@@ -442,7 +418,11 @@
                         }
                     };
 
-
+                    window.addEventListener('DOMContentLoaded', function () {
+                        if (Array.isArray(prefilledFiles) && prefilledFiles.length) {
+                            prefilledFiles.forEach((file) => appendCsvEntry(file));
+                        }
+                    });
                 </script>
 
             </div>

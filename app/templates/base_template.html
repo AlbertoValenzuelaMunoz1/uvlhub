@@ -122,6 +122,14 @@ chico sundermann">
                     </a>
                 </li>
 
+                {% if not current_user.is_anonymous %}
+                <li class="sidebar-item {{ 'active' if request.endpoint == 'dataset.import_dataset_from_github_form' or request.endpoint == 'dataset.import_dataset_from_zip_form' or request.endpoint == 'dataset.create_dataset' else '' }}">
+                    <a class="sidebar-link" href="{{ url_for('dataset.import_dataset_from_github_form') }}">
+                        <i class="align-middle" data-feather="upload"></i> <span class="align-middle">Upload dataset</span>
+                    </a>
+                </li>
+                {% endif %}
+
                 <li class="sidebar-item {{ 'active' if request.endpoint == 'team.index' else '' }}">
                     <a class="sidebar-link" href="{{ url_for('team.index') }}">
                         <i class="align-middle" data-feather="users"></i> <span
@@ -152,13 +160,6 @@ chico sundermann">
 
                     <li class="sidebar-header">
                         Datasets
-                    </li>
-
-                    <li class="sidebar-item {{ 'active' if request.endpoint == 'dataset.create_dataset' else '' }}">
-                        <a class="sidebar-link" href="{{ url_for('dataset.create_dataset') }}">
-                            <i class="align-middle" data-feather="upload"></i> <span
-                                class="align-middle">Upload dataset</span>
-                        </a>
                     </li>
 
                     <li class="sidebar-item {{ 'active' if request.endpoint == 'dataset.list_dataset' else '' }}">

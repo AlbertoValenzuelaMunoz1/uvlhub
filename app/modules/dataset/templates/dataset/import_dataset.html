@@ -1,0 +1,166 @@
+{% extends "base_template.html" %}
+
+{% block title %}Upload dataset{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-3"><b>Upload</b> dataset</h1>
+<p class="text-muted">Elige cómo quieres subir tu dataset: descargándolo desde un repositorio de GitHub o adjuntando un archivo ZIP (acepta CSV o UVL).</p>
+
+<div class="row">
+    <div class="col-lg-6 col-md-12 mb-3">
+        <div class="card {% if active_tab == 'github' %}border-primary{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="h5 mb-0">Desde GitHub</span>
+                <i class="fa-brands fa-github"></i>
+            </div>
+            <div class="card-body">
+                <p class="mb-2 small text-muted">
+                    Pega un enlace a un repositorio de GitHub (o a un zip directo). Descargaremos los CSV/UVL, validaremos los CSV y los dejaremos listos en tu carpeta temporal.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label" for="github_url">Enlace de GitHub</label>
+                    <input id="github_url" type="url" class="form-control" placeholder="https://github.com/owner/repo">
+                </div>
+                <button id="github_import_btn" class="btn btn-primary w-100">
+                    <i data-feather="download-cloud" class="me-1"></i> Importar desde GitHub
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12 mb-3">
+        <div class="card {% if active_tab == 'zip' %}border-primary{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="h5 mb-0">Archivo ZIP</span>
+                <i class="fa-solid fa-file-zipper"></i>
+            </div>
+            <div class="card-body">
+                <p class="mb-2 small text-muted">
+                    Sube un ZIP con tus CSV/UVL. Validaremos los CSV y copiaremos todo a tu carpeta temporal.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label" for="zip_file">Selecciona ZIP</label>
+                    <input id="zip_file" type="file" class="form-control" accept=".zip">
+                </div>
+                <button id="zip_import_btn" class="btn btn-primary w-100">
+                    <i data-feather="upload" class="me-1"></i> Importar ZIP
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="import_feedback" class="alert d-none" role="alert"></div>
+
+<div class="mt-3">
+    <a class="btn btn-outline-secondary" href="{{ url_for('dataset.create_dataset') }}">Ir al formulario de dataset</a>
+</div>
+
+<script>
+    const importFeedback = document.getElementById('import_feedback');
+    const githubBtn = document.getElementById('github_import_btn');
+    const zipBtn = document.getElementById('zip_import_btn');
+    const githubInput = document.getElementById('github_url');
+    const zipInput = document.getElementById('zip_file');
+
+    function showImportFeedback(message, isError = false, files = [], skipped = []) {
+        if (!importFeedback) return;
+        importFeedback.classList.remove('d-none', 'alert-danger', 'alert-success');
+        importFeedback.classList.add(isError ? 'alert-danger' : 'alert-success');
+
+        let details = '';
+        if (files.length) {
+            details += `<div class="mt-1"><strong>CSV importados:</strong> ${files.join(', ')}</div>`;
+        }
+        if (skipped.length) {
+            details += `<div class="mt-1 text-muted small"><strong>Omitidos:</strong> ${skipped.join('; ')}</div>`;
+        }
+
+        importFeedback.innerHTML = `${message}${details}`;
+    }
+
+    function setLoadingState(button, isLoading) {
+        if (!button) return;
+        button.disabled = isLoading;
+        button.innerHTML = isLoading ? '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...' : button.dataset.defaultText;
+    }
+
+    function initButtonLabels() {
+        [githubBtn, zipBtn].forEach(btn => {
+            if (btn) {
+                btn.dataset.defaultText = btn.innerHTML;
+            }
+        });
+    }
+
+    async function importFromGithub() {
+        if (!githubInput || !githubInput.value.trim()) {
+            showImportFeedback('Añade un enlace de GitHub válido.', true);
+            return;
+        }
+        setLoadingState(githubBtn, true);
+        try {
+            const response = await fetch("{{ url_for('dataset.import_dataset_from_github') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({github_url: githubInput.value.trim()})
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                showImportFeedback(data.message || 'No se pudo importar desde GitHub.', true, [], data.skipped || []);
+                return;
+            }
+            showImportFeedback(data.message || 'Importación completada.', false, data.files || [], data.skipped || []);
+        } catch (error) {
+            showImportFeedback('Error al conectar con GitHub: ' + error, true);
+        } finally {
+            setLoadingState(githubBtn, false);
+        }
+    }
+
+    async function importFromZip() {
+        if (!zipInput || !zipInput.files.length) {
+            showImportFeedback('Selecciona un archivo ZIP para importar.', true);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', zipInput.files[0]);
+        setLoadingState(zipBtn, true);
+
+        try {
+            const response = await fetch("{{ url_for('dataset.import_dataset_from_zip') }}", {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                showImportFeedback(data.message || 'No se pudo importar el ZIP.', true, [], data.skipped || []);
+                return;
+            }
+            showImportFeedback(data.message || 'Importación completada.', false, data.files || [], data.skipped || []);
+        } catch (error) {
+            showImportFeedback('Error al subir el ZIP: ' + error, true);
+        } finally {
+            setLoadingState(zipBtn, false);
+        }
+    }
+
+    initButtonLabels();
+
+    if (githubBtn) {
+        githubBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            importFromGithub();
+        });
+    }
+    if (zipBtn) {
+        zipBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            importFromZip();
+        });
+    }
+</script>
+{% endblock %}

@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
+import requests
 from flask import (
     abort,
     jsonify,
@@ -19,6 +20,8 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
+from urllib.parse import urlparse
+from werkzeug.utils import secure_filename
 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
@@ -87,56 +90,284 @@ CSV_REQUIRED_COLUMNS = [
 ]
 
 
-def validate_uploaded_csv_files(temp_folder, feature_models):
-    """Ensure every uploaded file is a CSV matching the required tennis columns."""
+SUPPORTED_EXTENSIONS = (".csv", ".uvl")
+
+
+def validate_uploaded_files(temp_folder, feature_models):
+    """Ensure every uploaded file exists and, if CSV, matches the expected columns."""
     for feature_model in feature_models:
         file_name = feature_model.uvl_filename.data
 
         if not file_name:
             return "Each uploaded file must include a filename."
 
-        if not file_name.lower().endswith(".csv"):
-            return f"{file_name} must be a CSV file."
+        if not file_name.lower().endswith(SUPPORTED_EXTENSIONS):
+            return f"{file_name} must be one of: {', '.join(SUPPORTED_EXTENSIONS)}"
 
         file_path = os.path.join(temp_folder, file_name)
         if not os.path.isfile(file_path):
             return f"{file_name} not found in the temporary upload folder."
 
-        try:
-            with open(file_path, "r", newline="", encoding="utf-8-sig") as csv_file:
-                sample = csv_file.read(2048)
-                csv_file.seek(0)
-                try:
-                    dialect = csv.Sniffer().sniff(sample)
-                except csv.Error:
-                    dialect = csv.excel
-                reader = csv.reader(csv_file, dialect)
-                headers = next(reader, None)
-        except Exception as exc:
-            logger.exception("Error reading uploaded CSV %s", file_name)
-            return f"Could not read {file_name}: {exc}"
+        if file_name.lower().endswith(".csv"):
+            try:
+                with open(file_path, "r", newline="", encoding="utf-8-sig") as csv_file:
+                    sample = csv_file.read(2048)
+                    csv_file.seek(0)
+                    try:
+                        dialect = csv.Sniffer().sniff(sample)
+                    except csv.Error:
+                        dialect = csv.excel
+                    reader = csv.reader(csv_file, dialect)
+                    headers = next(reader, None)
+            except Exception as exc:
+                logger.exception("Error reading uploaded CSV %s", file_name)
+                return f"Could not read {file_name}: {exc}"
 
-        if not headers:
-            return f"{file_name} is empty or missing a header row."
+            if not headers:
+                return f"{file_name} is empty or missing a header row."
 
-        normalized_headers = [header.strip() for header in headers]
+            normalized_headers = [header.strip() for header in headers]
 
-        if normalized_headers != CSV_REQUIRED_COLUMNS:
-            missing = [col for col in CSV_REQUIRED_COLUMNS if col not in normalized_headers]
-            extras = [col for col in normalized_headers if col not in CSV_REQUIRED_COLUMNS]
-            details = []
-            if missing:
-                details.append(f"missing columns: {', '.join(missing)}")
-            if extras:
-                details.append(f"unexpected columns: {', '.join(extras)}")
+            if normalized_headers != CSV_REQUIRED_COLUMNS:
+                missing = [col for col in CSV_REQUIRED_COLUMNS if col not in normalized_headers]
+                extras = [col for col in normalized_headers if col not in CSV_REQUIRED_COLUMNS]
+                details = []
+                if missing:
+                    details.append(f"missing columns: {', '.join(missing)}")
+                if extras:
+                    details.append(f"unexpected columns: {', '.join(extras)}")
 
-            detail_msg = "; ".join(details) if details else "columns are out of order"
-            return (
-                f"{file_name} must include the columns "
-                f"{', '.join(CSV_REQUIRED_COLUMNS)}; {detail_msg}."
-            )
+                detail_msg = "; ".join(details) if details else "columns are out of order"
+                return (
+                    f"{file_name} must include the columns "
+                    f"{', '.join(CSV_REQUIRED_COLUMNS)}; {detail_msg}."
+                )
 
     return None
+
+
+def ensure_temp_upload_folder() -> str:
+    """Create the current user's temp folder if it does not exist."""
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+    return temp_folder
+
+
+def unique_filename(directory: str, filename: str) -> str:
+    """Return a filename that does not collide inside directory."""
+    base_name, extension = os.path.splitext(filename)
+    candidate = filename
+    counter = 1
+    while os.path.exists(os.path.join(directory, candidate)):
+        candidate = f"{base_name} ({counter}){extension}"
+        counter += 1
+    return candidate
+
+
+def validate_csv_file(file_path: str):
+    """Validate a single CSV file against the expected header."""
+    if not file_path.lower().endswith(".csv"):
+        return "Only CSV files are supported."
+
+    try:
+        with open(file_path, "r", newline="", encoding="utf-8-sig") as csv_file:
+            sample = csv_file.read(2048)
+            csv_file.seek(0)
+            try:
+                dialect = csv.Sniffer().sniff(sample)
+            except csv.Error:
+                dialect = csv.excel
+            reader = csv.reader(csv_file, dialect)
+            headers = next(reader, None)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.exception("Error reading CSV %s", file_path)
+        return f"Could not read CSV: {exc}"
+
+    if not headers:
+        return "File is empty or missing a header row."
+
+    normalized_headers = [header.strip() for header in headers]
+
+    if normalized_headers != CSV_REQUIRED_COLUMNS:
+        missing = [col for col in CSV_REQUIRED_COLUMNS if col not in normalized_headers]
+        extras = [col for col in normalized_headers if col not in CSV_REQUIRED_COLUMNS]
+        details = []
+        if missing:
+            details.append(f"missing columns: {', '.join(missing)}")
+        if extras:
+            details.append(f"unexpected columns: {', '.join(extras)}")
+        detail_msg = "; ".join(details) if details else "columns are out of order"
+        return (
+            f"Columns must match {', '.join(CSV_REQUIRED_COLUMNS)}; {detail_msg}."
+        )
+    return None
+
+
+def extract_supported_files_from_zip(zip_path: str, temp_folder: str):
+    """Extract valid CSV/UVL files from a zip into the user's temp folder."""
+    saved_files = []
+    skipped = []
+    with ZipFile(zip_path, "r") as archive:
+        for member in archive.namelist():
+            if member.endswith("/"):
+                continue
+            if not member.lower().endswith(SUPPORTED_EXTENSIONS):
+                continue
+
+            filename = secure_filename(os.path.basename(member))
+            if not filename:
+                skipped.append(f"{member} skipped (invalid name)")
+                continue
+
+            safe_filename = unique_filename(temp_folder, filename)
+            destination = os.path.join(temp_folder, safe_filename)
+
+            try:
+                with archive.open(member) as source, open(destination, "wb") as target:
+                    shutil.copyfileobj(source, target)
+            except Exception as exc:  # pragma: no cover - defensive
+                skipped.append(f"{filename} skipped (error while extracting: {exc})")
+                continue
+
+            # Only validate CSV headers; UVL files are accepted as-is.
+            if filename.lower().endswith(".csv"):
+                validation_error = validate_csv_file(destination)
+                if validation_error:
+                    skipped.append(f"{filename} skipped ({validation_error})")
+                    try:
+                        os.remove(destination)
+                    except OSError:
+                        pass
+                    continue
+
+            saved_files.append(safe_filename)
+    return saved_files, skipped
+
+
+def resolve_github_zip_url(github_url: str) -> str:
+    """Return a direct zip URL given a GitHub repo or zip link."""
+    if github_url.lower().endswith(".zip"):
+        return github_url
+
+    parsed = urlparse(github_url)
+    if "github.com" not in parsed.netloc:
+        raise ValueError("The provided link is not a valid GitHub URL or zip file.")
+
+    path_parts = [part for part in parsed.path.split("/") if part]
+    if len(path_parts) < 2:
+        raise ValueError("GitHub URL must include owner and repository.")
+
+    owner, repo = path_parts[0], path_parts[1]
+    branch = "main"
+    if len(path_parts) >= 4 and path_parts[2] == "tree":
+        branch = path_parts[3]
+
+    return f"https://github.com/{owner}/{repo}/archive/refs/heads/{branch}.zip"
+
+
+@dataset_bp.route("/dataset/import/github", methods=["GET"])
+@login_required
+def import_dataset_from_github_form():
+    return render_template("dataset/import_dataset.html", active_tab="github")
+
+
+@dataset_bp.route("/dataset/import/zip", methods=["GET"])
+@login_required
+def import_dataset_from_zip_form():
+    return render_template("dataset/import_dataset.html", active_tab="zip")
+
+
+@dataset_bp.route("/dataset/file/import/github", methods=["POST"])
+@login_required
+def import_dataset_from_github():
+    payload = request.get_json(silent=True) or {}
+    github_url = (payload.get("github_url") or "").strip()
+
+    if not github_url:
+        return jsonify({"message": "GitHub URL is required."}), 400
+
+    try:
+        zip_url = resolve_github_zip_url(github_url)
+    except ValueError as exc:
+        return jsonify({"message": str(exc)}), 400
+
+    try:
+        response = requests.get(zip_url, timeout=30)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.exception("Error downloading GitHub archive")
+        return jsonify({"message": f"Could not download repository: {exc}"}), 400
+
+    temp_folder = ensure_temp_upload_folder()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
+        tmp.write(response.content)
+        tmp_path = tmp.name
+
+    try:
+        saved_files, skipped = extract_supported_files_from_zip(tmp_path, temp_folder)
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+
+    if not saved_files:
+        message = "No valid CSV files were found in the provided repository."
+        if skipped:
+            message += " " + " ".join(skipped)
+        return jsonify({"message": message, "files": [], "skipped": skipped}), 400
+
+    return (
+        jsonify(
+            {
+                "message": "CSV files imported from GitHub.",
+                "files": saved_files,
+                "skipped": skipped,
+            }
+        ),
+        200,
+    )
+
+
+@dataset_bp.route("/dataset/file/import/zip", methods=["POST"])
+@login_required
+def import_dataset_from_zip():
+    uploaded_file = request.files.get("file")
+    if not uploaded_file or uploaded_file.filename == "":
+        return jsonify({"message": "A zip file is required."}), 400
+
+    if not uploaded_file.filename.lower().endswith(".zip"):
+        return jsonify({"message": "Only .zip files are supported."}), 400
+
+    temp_folder = ensure_temp_upload_folder()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
+        uploaded_file.save(tmp.name)
+        tmp_path = tmp.name
+
+    try:
+        saved_files, skipped = extract_supported_files_from_zip(tmp_path, temp_folder)
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+
+    if not saved_files:
+        message = "No valid CSV files were found inside the zip file."
+        if skipped:
+            message += " " + " ".join(skipped)
+        return jsonify({"message": message, "files": [], "skipped": skipped}), 400
+
+    return (
+        jsonify(
+            {
+                "message": "CSV files imported from zip.",
+                "files": saved_files,
+                "skipped": skipped,
+            }
+        ),
+        200,
+    )
 
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
@@ -151,7 +382,7 @@ def create_dataset():
             return jsonify({"message": form.errors}), 400
 
         temp_folder = current_user.temp_folder()
-        validation_error = validate_uploaded_csv_files(temp_folder, form.feature_models)
+        validation_error = validate_uploaded_files(temp_folder, form.feature_models)
         if validation_error:
             return jsonify({"message": validation_error}), 400
 
@@ -204,7 +435,16 @@ def create_dataset():
         msg = "Everything works!"
         return jsonify({"message": msg}), 200
 
-    return render_template("dataset/upload_dataset.html", form=form)
+    prefilled_files = []
+    temp_folder = current_user.temp_folder()
+    if os.path.isdir(temp_folder):
+        prefilled_files = [
+            file
+            for file in os.listdir(temp_folder)
+            if os.path.isfile(os.path.join(temp_folder, file)) and file.lower().endswith(".csv")
+        ]
+
+    return render_template("dataset/upload_dataset.html", form=form, prefilled_files=prefilled_files)
 
 
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
@@ -223,8 +463,8 @@ def upload():
     file = request.files["file"]
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.lower().endswith(".csv"):
-        return jsonify({"message": "No valid file, only .csv allowed"}), 400
+    if not file or not file.filename.lower().endswith(SUPPORTED_EXTENSIONS):
+        return jsonify({"message": f"No valid file, only {', '.join(SUPPORTED_EXTENSIONS)} allowed"}), 400
 
     # create temp folder
     if not os.path.exists(temp_folder):
