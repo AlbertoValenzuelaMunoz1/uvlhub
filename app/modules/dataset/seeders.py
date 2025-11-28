@@ -33,7 +33,6 @@ class DataSetSeeder(BaseSeeder):
                 deposition_id=1 + i,
                 title=f"Sample dataset {i+1}",
                 description=f"Description for dataset {i+1}",
-                publication_type=PublicationType.DATA_MANAGEMENT_PLAN,
                 publication_doi=f"10.1234/dataset{i+1}",
                 dataset_doi=f"10.1234/dataset{i+1}",
                 tags="tag1, tag2",
@@ -72,7 +71,6 @@ class DataSetSeeder(BaseSeeder):
                 uvl_filename=f"file{i+1}.uvl",
                 title=f"Feature Model {i+1}",
                 description=f"Description for feature model {i+1}",
-                publication_type=PublicationType.SOFTWARE_DOCUMENTATION,
                 publication_doi=f"10.1234/fm{i+1}",
                 tags="tag1, tag2",
                 uvl_version="1.0",
@@ -102,9 +100,9 @@ class DataSetSeeder(BaseSeeder):
         # Create files, associate them with FeatureModels and copy files
         load_dotenv()
         working_dir = os.getenv("WORKING_DIR", "")
-        src_folder = os.path.join(working_dir, "app", "modules", "dataset", "uvl_examples")
+        src_folder = os.path.join(working_dir, "app", "modules", "dataset", "csv_examples")
         for i in range(12):
-            file_name = f"file{i+1}.uvl"
+            file_name = f"{2010+i}.csv"
             feature_model = seeded_feature_models[i]
             dataset = next(ds for ds in seeded_datasets if ds.id == feature_model.data_set_id)
             user_id = dataset.user_id

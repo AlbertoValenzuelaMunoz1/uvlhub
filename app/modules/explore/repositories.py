@@ -12,7 +12,7 @@ class ExploreRepository(BaseRepository):
     def __init__(self):
         super().__init__(DataSet)
 
-    def filter(self, query="", sorting="newest", publication_type="any", tags=[], **kwargs):
+    def filter(self, query="", sorting="newest", tags=[], **kwargs):
         # Normalize and remove unwanted characters
         normalized_query = unidecode.unidecode(query).lower()
         cleaned_query = re.sub(r'[,.":\'()\[\]^;!¡¿?]', "", normalized_query)
@@ -40,15 +40,7 @@ class ExploreRepository(BaseRepository):
             .filter(DSMetaData.dataset_doi.isnot(None))  # Exclude datasets with empty dataset_doi
         )
 
-        if publication_type != "any":
-            matching_type = None
-            for member in PublicationType:
-                if member.value.lower() == publication_type:
-                    matching_type = member
-                    break
-
-            if matching_type is not None:
-                datasets = datasets.filter(DSMetaData.publication_type == matching_type.name)
+        
 
         if tags:
             datasets = datasets.filter(DSMetaData.tags.ilike(any_(f"%{tag}%" for tag in tags)))

@@ -19,11 +19,10 @@ function send_query() {
             const searchCriteria = {
                 csrf_token: csrfToken,
                 query: document.querySelector('#query').value,
-                publication_type: document.querySelector('#publication_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
             };
 
-            console.log(document.querySelector('#publication_type').value);
+            
 
             fetch('/explore', {
                 method: 'POST',
@@ -59,9 +58,6 @@ function send_query() {
                                 <div class="card-body">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <h3><a href="${dataset.url}">${dataset.title}</a></h3>
-                                        <div>
-                                            <span class="badge bg-primary" style="cursor: pointer;" onclick="set_publication_type_as_query('${dataset.publication_type}')">${dataset.publication_type}</span>
-                                        </div>
                                     </div>
                                     <p class="text-secondary">${formatDate(dataset.created_at)}</p>
 
@@ -146,17 +142,7 @@ function set_tag_as_query(tagName) {
     queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 }
 
-function set_publication_type_as_query(publicationType) {
-    const publicationTypeSelect = document.getElementById('publication_type');
-    for (let i = 0; i < publicationTypeSelect.options.length; i++) {
-        if (publicationTypeSelect.options[i].text === publicationType.trim()) {
-            // Set the value of the select to the value of the matching option
-            publicationTypeSelect.value = publicationTypeSelect.options[i].value;
-            break;
-        }
-    }
-    publicationTypeSelect.dispatchEvent(new Event('input', {bubbles: true}));
-}
+
 
 document.getElementById('clear-filters').addEventListener('click', clearFilters);
 
@@ -168,8 +154,7 @@ function clearFilters() {
     // queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 
     // Reset the publication type to its default value
-    let publicationTypeSelect = document.querySelector('#publication_type');
-    publicationTypeSelect.value = "any"; // replace "any" with whatever your default value is
+    
     // publicationTypeSelect.dispatchEvent(new Event('input', {bubbles: true}));
 
     // Reset the sorting option
