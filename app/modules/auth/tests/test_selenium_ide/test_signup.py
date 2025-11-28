@@ -3,7 +3,8 @@ from selenium.webdriver.common.by import By
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import initialize_driver
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 class TestSignup:
     def setup_method(self, method):
@@ -15,7 +16,11 @@ class TestSignup:
 
     def test_signup(self):
         self.driver.get(get_host_for_selenium_testing())
-        self.driver.find_element(By.LINK_TEXT, "Sign Up").click()
+        WebDriverWait(self.driver, 10).until(
+        EC.presence_of_element_located(
+            (By.LINK_TEXT, "Sign up")
+        )
+        ).click()
         self.driver.find_element(By.ID, "email").send_keys("user1@example.com")
         self.driver.find_element(By.ID, "password").send_keys("1234")
         self.driver.find_element(By.ID, "name").click()

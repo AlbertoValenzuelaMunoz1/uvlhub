@@ -97,10 +97,10 @@ def test_upload_dataset():
 
         # Obtén las rutas absolutas de los archivos
         file1_path = os.path.abspath(
-            "app/modules/dataset/uvl_examples/file1.uvl"
+            "app/modules/dataset/csv_examples/2023.csv"
         )
         file2_path = os.path.abspath(
-            "app/modules/dataset/uvl_examples/file2.uvl"
+            "app/modules/dataset/csv_examples/2022.csv"
         )
 
         # Subir el primer archivo
@@ -163,7 +163,11 @@ def test_testdownloadcounter():
 
         driver.get(f"{host}")
         driver.set_window_size(602, 743)
-        driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+        WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.LINK_TEXT, "Sample dataset 4")
+        )
+        ).click()
         descargas = int(driver.find_element(By.ID, "downloads-badge").text.split(": ")[1])
         driver.find_element(By.CSS_SELECTOR, ".mt-3").click()
         driver.get(driver.current_url)
@@ -182,7 +186,11 @@ def test_comentarios():
     driver.get(host + "/")
 
     # Ir al dataset de prueba
-    driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.LINK_TEXT, "Sample dataset 4")
+        )
+        ).click()
 
     # Iniciar sesión
     driver.get(host+"/login")
@@ -191,7 +199,11 @@ def test_comentarios():
     driver.find_element(By.ID, "submit").click()
 
     # Volver al dataset
-    driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.LINK_TEXT, "Sample dataset 4")
+        )
+        ).click()
 
     # Crear primer comentario
     driver.find_element(By.NAME, "content").send_keys("Hola")
@@ -233,7 +245,11 @@ def test_testcarritos():
         host = get_host_for_selenium_testing()
         driver.get(host)
         driver.set_window_size(1854, 1048)
-        driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+        WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.LINK_TEXT, "Sample dataset 4")
+        )
+        ).click()
         driver.find_element(
             By.CSS_SELECTOR,
             ".list-group-item:nth-child(2) .add-to-cart",
