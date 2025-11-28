@@ -112,7 +112,8 @@
                 showImportFeedback(data.message || 'No se pudo importar desde GitHub.', true, [], data.skipped || []);
                 return;
             }
-            showImportFeedback(data.message || 'Importación completada.', false, data.files || [], data.skipped || []);
+            //showImportFeedback(data.message || 'Importación completada.', false, data.files || [], data.skipped || []);
+            window.location.href="{{ url_for('dataset.create_dataset') }}"
         } catch (error) {
             showImportFeedback('Error al conectar con GitHub: ' + error, true);
         } finally {
@@ -140,7 +141,8 @@
                 showImportFeedback(data.message || 'No se pudo importar el ZIP.', true, [], data.skipped || []);
                 return;
             }
-            showImportFeedback(data.message || 'Importación completada.', false, data.files || [], data.skipped || []);
+            //showImportFeedback(data.message || 'Importación completada.', false, data.files || [], data.skipped || []);
+            window.location.href="{{ url_for('dataset.create_dataset') }}"
         } catch (error) {
             showImportFeedback('Error al subir el ZIP: ' + error, true);
         } finally {
